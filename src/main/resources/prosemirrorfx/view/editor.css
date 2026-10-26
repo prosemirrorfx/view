@@ -1,8 +1,16 @@
-.pm-scroll, .pm-scroll > .viewport { -fx-background-color: #ffffff; }
+/* Colour tokens. These are the light defaults; view.setTheme(Theme) sets the same names inline, which beats these.
+   The caret, selection, find shading and line numbers are drawn in code and take their colours from the Theme as well. */
+.pm-view, .pm-toolbar, .pm-statusbar, .pm-toc {
+    -pm-bg: #FFFFFF; -pm-panel: #FAFBFC; -pm-text: #172B4D; -pm-muted: #5E6C84; -pm-interim: #8993A4;
+    -pm-code: #403294; -pm-link: #0052CC; -pm-line: #DFE1E6; -pm-border: #C1C7D0; -pm-active-line: #F1F4F9;
+    -pm-hover: #EBECF0; -pm-handle: #6B778C; -pm-select: #DEEBFF; -pm-select-focus: #4C9AFF;
+}
+
+.pm-scroll, .pm-scroll > .viewport { -fx-background-color: -pm-bg; }
 .pm-page { -fx-padding: 24 40 40 40; -fx-font-size: 15px; }
 .pm-doc { -fx-spacing: 10; }
 
-.pm-text { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-fill: #172B4D; }
+.pm-text { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-fill: -pm-text; }
 .pm-text.strong { -fx-font-weight: bold; }
 .pm-text.em { -fx-font-style: italic; }
 
@@ -12,34 +20,34 @@
 .pm-h3 .pm-text { -fx-font-size: 1.1333em; -fx-font-weight: bold; }
 .pm-h4 .pm-text { -fx-font-size: 1em; -fx-font-weight: bold; }
 .pm-h5 .pm-text { -fx-font-size: 0.9333em; -fx-font-weight: bold; }
-.pm-h6 .pm-text { -fx-font-size: 0.8667em; -fx-font-weight: bold; -fx-fill: #5E6C84; }
+.pm-h6 .pm-text { -fx-font-size: 0.8667em; -fx-font-weight: bold; -fx-fill: -pm-muted; }
 .pm-h1, .pm-h2, .pm-h3, .pm-h4, .pm-h5, .pm-h6 { -fx-padding: 6 0 0 0; }
 
 .pm-list { -fx-spacing: 4; }
 .pm-item { -fx-spacing: 6; }
 .pm-item-body { -fx-spacing: 4; }
-.pm-marker { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-text-fill: #172B4D; -fx-min-width: 22; -fx-alignment: top-right; }
+.pm-marker { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-text-fill: -pm-text; -fx-min-width: 22; -fx-alignment: top-right; }
 
 
-.pm-current .label { -fx-text-fill: #0052CC; }
+.pm-current .label { -fx-text-fill: -pm-link; }
 
 .pm-page.pm-numbered { -fx-padding: 24 40 40 88; }
 
-.pm-toc { -fx-background-color: #FAFBFC; -fx-border-color: #DFE1E6; -fx-border-width: 0 1 0 0; -fx-pref-width: 240; }
-.pm-toc-title { -fx-font-family: "Segoe UI"; -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #5E6C84; -fx-padding: 12 12 6 12; }
+.pm-toc { -fx-background-color: -pm-panel; -fx-border-color: -pm-line; -fx-border-width: 0 1 0 0; -fx-pref-width: 240; }
+.pm-toc-title { -fx-font-family: "Segoe UI"; -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pm-muted; -fx-padding: 12 12 6 12; }
 .pm-toc .list-view { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; }
-.pm-toc .list-cell { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; -fx-text-fill: #172B4D; -fx-background-color: transparent; -fx-padding: 4 12 4 12; }
+.pm-toc .list-cell { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; -fx-text-fill: -pm-text; -fx-background-color: transparent; -fx-padding: 4 12 4 12; }
 .pm-toc .list-cell:empty { -fx-background-color: transparent; }
 .pm-toc .list-cell.pm-toc-h1 { -fx-font-weight: bold; }
-.pm-toc .list-cell:selected { -fx-background-color: #DEEBFF; -fx-text-fill: #0052CC; }
-.pm-toc .list-view:focused .list-cell:selected { -fx-background-color: #4C9AFF; -fx-text-fill: white; }
+.pm-toc .list-cell:selected { -fx-background-color: -pm-select; -fx-text-fill: -pm-link; }
+.pm-toc .list-view:focused .list-cell:selected { -fx-background-color: -pm-select-focus; -fx-text-fill: white; }
 
-.pm-find { -fx-background-color: #FFFFFF; -fx-border-color: #C1C7D0; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6 8; -fx-effect: dropshadow(gaussian, rgba(9,30,66,0.25), 8, 0, 0, 2); }
+.pm-find { -fx-background-color: -pm-bg; -fx-border-color: -pm-border; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 6 8; -fx-effect: dropshadow(gaussian, rgba(9,30,66,0.25), 8, 0, 0, 2); }
 .pm-find .text-field { -fx-font-family: "Segoe UI"; -fx-font-size: 13px; }
-.pm-find .label { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: #5E6C84; }
+.pm-find .label { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: -pm-muted; }
 .pm-find .button { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-padding: 3 8; }
-.pm-status { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: #5E6C84; -fx-padding: 0 4 0 12; }
-.pm-text.pm-interim { -fx-fill: #8993A4; -fx-font-style: italic; }
+.pm-status { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: -pm-muted; -fx-padding: 0 4 0 12; }
+.pm-text.pm-interim { -fx-fill: -pm-interim; -fx-font-style: italic; }
 
 /* Toolbar on top and status line at the bottom: JavaFX's own buttons and colours, only sizes set here. */
 .pm-toolbar { -fx-padding: 4 8; -fx-spacing: 2; }
@@ -50,9 +58,9 @@
 .pm-statusbar { -fx-padding: 3 10; }
 
 /* The block holding the caret: an optional gentle band behind it, and the block-type control in the left margin. */
-.pm-active-line { -fx-background-color: #F1F4F9; -fx-background-radius: 3; }
-.pm-block-handle { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: #6B778C; -fx-padding: 2 5; -fx-min-width: 28; -fx-background-color: transparent; -fx-border-color: #DFE1E6; -fx-border-radius: 3; -fx-background-radius: 3; -fx-cursor: hand; }
-.pm-block-handle:hover { -fx-background-color: #EBECF0; -fx-text-fill: #172B4D; }
+.pm-active-line { -fx-background-color: -pm-active-line; -fx-background-radius: 3; }
+.pm-block-handle { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: -pm-handle; -fx-padding: 2 5; -fx-min-width: 28; -fx-background-color: transparent; -fx-border-color: -pm-line; -fx-border-radius: 3; -fx-background-radius: 3; -fx-cursor: hand; }
+.pm-block-handle:hover { -fx-background-color: -pm-hover; -fx-text-fill: -pm-text; }
 
 .pm-zoom { -fx-pref-width: 82; -fx-font-size: 12px; }
 .pm-zoom-step { -fx-padding: 1 3; }
@@ -61,5 +69,5 @@
 .pm-split > .arrow-button { -fx-padding: 4 4; }
 
 /* Marks that only a Markdown file read through Lossless carries. */
-.pm-text.code { -fx-font-family: "Consolas"; -fx-fill: #403294; }
-.pm-text.link { -fx-fill: #0052CC; -fx-underline: true; }
+.pm-text.code { -fx-font-family: "Consolas"; -fx-fill: -pm-code; }
+.pm-text.link { -fx-fill: -pm-link; -fx-underline: true; }

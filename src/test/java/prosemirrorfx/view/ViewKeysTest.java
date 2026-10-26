@@ -50,6 +50,46 @@ class ViewKeysTest {
         pulse();
     }
 
+    javafx.scene.paint.Paint pageColour() { return ((javafx.scene.layout.Region) view.scroll.lookup(".viewport")).getBackground().getFills().getFirst().getFill(); }
+
+    javafx.scene.paint.Paint textColour() { return ((Text) flows().getFirst().getChildren().getFirst()).getFill(); }
+
+    javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
+
+    @Test void theLightColoursApplyUntilAThemeIsSet() {
+        open(p("light|"));
+        assertEquals(Theme.LIGHT.color("bg"), fx(this::pageColour));
+        assertEquals(Theme.LIGHT.color("text"), fx(this::textColour));
+        assertEquals(Theme.LIGHT.color("caret"), fx(() -> view.caretLayer.caret.getFill()));
+    }
+
+    @Test void aThemeRestylesThePageTheDrawnShapesAndTheToolbarStatusBarAndContents() {
+        open(h(1, "Title"), p("dark|"));
+        fx(() -> toc.toggle());
+        clickTool(EditorAction.LINES);
+        fx(() -> view.setTheme(Theme.DARK));
+        pulse();
+        assertEquals(Theme.DARK.color("bg"), fx(this::pageColour));
+        assertEquals(Theme.DARK.color("text"), fx(this::textColour));
+        assertEquals(Theme.DARK.color("caret"), fx(() -> view.caretLayer.caret.getFill()));
+        assertEquals(Theme.DARK.color("muted"), fx(() -> labelColour(".pm-status")), "the status bar made from the view follows it");
+        assertEquals(Theme.DARK.color("muted"), fx(() -> labelColour(".pm-toc-title")), "so does the contents panel");
+        assertTrue(fx(() -> visibleNumbers().stream().allMatch(t -> Theme.DARK.color("number").equals(t.getFill()))), "line numbers are drawn in code and follow too");
+        fx(() -> view.setTheme(Theme.LIGHT));
+        pulse();
+        assertEquals(Theme.LIGHT.color("bg"), fx(this::pageColour));
+        assertEquals(Theme.LIGHT.color("muted"), fx(() -> labelColour(".pm-status")));
+    }
+
+    @Test void aSelectionDrawnAfterAThemeChangeUsesTheNewColour() {
+        open(p("some words here|"));
+        fx(() -> view.setTheme(Theme.DARK));
+        press(LEFT, false, true);
+        press(LEFT, false, true);
+        var shades = fx(() -> overlayChildren().stream().filter(n -> n.isVisible() && n instanceof javafx.scene.shape.Rectangle r && Theme.DARK.color("selection").equals(r.getFill())).count());
+        assertTrue(shades > 0, "the selection is drawn in the dark theme's colour");
+    }
+
     @Test void movingToAnotherWindowLeavesNothingBehindInTheOldScene() {
         open(p("moved|"));
         var second = fx(() -> new Stage());

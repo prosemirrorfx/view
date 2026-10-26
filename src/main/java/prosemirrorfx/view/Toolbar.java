@@ -48,6 +48,7 @@ public final class Toolbar {
         view.lineNumbersProperty().addListener((o, a, b) -> refresh.run());
         view.activeLineProperty().addListener((o, a, b) -> refresh.run());
         refresh.run();
+        view.follow(bar);
         return bar;
     }
 

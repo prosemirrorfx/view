@@ -18,10 +18,10 @@ import static prosemirrorfx.view.Positions.*;
  */
 final class CaretLayer {
 
-    static final Color CARET = Color.web("#172B4D"), SELECTION = Color.rgb(76, 154, 255, 0.30), MATCH = Color.rgb(255, 196, 0, 0.35);
+    Color caretColor = Theme.LIGHT.color("caret"), selectionColor = Theme.LIGHT.color("selection"), matchColor = Theme.LIGHT.color("match");
 
     final Pane overlay;
-    final Rectangle caret = new Rectangle(1.6, 16, CARET);
+    final Rectangle caret = new Rectangle(1.6, 16, caretColor);
     final List<Rectangle> shades = new ArrayList<>();
     final List<Rectangle> marks = new ArrayList<>();
     final Timeline blink = new Timeline(new KeyFrame(Duration.millis(530), e -> caret.setVisible(!caret.isVisible())));
@@ -99,7 +99,7 @@ final class CaretLayer {
             for (var r : tb.flow.getLayoutInfo().getSelectionGeometry(from - tb.start, Math.min(to, end(tb)) - tb.start, true)) {
                 var o = toOverlay(tb, r);
                 while (underlines.size() <= n) {
-                    var u = new Rectangle(0, 0, CARET);
+                    var u = new Rectangle(0, 0, caretColor);
                     u.setManaged(false);
                     underlines.add(u);
                     overlay.getChildren().add(u);
@@ -117,7 +117,7 @@ final class CaretLayer {
 
     Rectangle mark(int i) {
         while (marks.size() <= i) {
-            var s = new Rectangle(0, 0, MATCH);
+            var s = new Rectangle(0, 0, matchColor);
             s.setManaged(false);
             marks.add(s);
             overlay.getChildren().add(0, s);
@@ -127,7 +127,7 @@ final class CaretLayer {
 
     Rectangle shade(int i) {
         while (shades.size() <= i) {
-            var s = new Rectangle(0, 0, SELECTION);
+            var s = new Rectangle(0, 0, selectionColor);
             s.setManaged(false);
             shades.add(s);
             overlay.getChildren().add(overlay.getChildren().size() - 1, s);
@@ -138,6 +138,17 @@ final class CaretLayer {
     Bounds toOverlay(BlockView tb, Rectangle2D r) {
         var scene = tb.flow.localToScene(new BoundingBox(r.getMinX(), r.getMinY(), Math.max(r.getWidth(), 1), r.getHeight()));
         return overlay.sceneToLocal(scene);
+    }
+
+    /** New colours for the shapes already drawn; shapes made later use them from the start. */
+    void apply(Theme theme) {
+        caretColor = theme.color("caret");
+        selectionColor = theme.color("selection");
+        matchColor = theme.color("match");
+        caret.setFill(caretColor);
+        underlines.forEach(u -> u.setFill(caretColor));
+        shades.forEach(s -> s.setFill(selectionColor));
+        marks.forEach(m -> m.setFill(matchColor));
     }
 
     void restartBlink(boolean focused) {

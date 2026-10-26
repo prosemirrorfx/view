@@ -14,7 +14,7 @@ import javafx.scene.text.*;
 final class LineNumbers {
 
     Font font = Font.font("Segoe UI", 11);
-    static final Color COLOR = Color.web("#97A0AF");
+    Color color = Theme.LIGHT.color("number");
     static final double RIGHT_EDGE = 50;
 
     final Pane gutter;
@@ -43,6 +43,11 @@ final class LineNumbers {
         pool.forEach(t -> t.setFont(font));
     }
 
+    void apply(Theme theme) {
+        color = theme.color("number");
+        pool.forEach(t -> t.setFill(color));
+    }
+
     void clear() {
         pool.forEach(t -> t.setVisible(false));
     }
@@ -51,7 +56,7 @@ final class LineNumbers {
         while (pool.size() <= i) {
             var t = new Text();
             t.setFont(font);
-            t.setFill(COLOR);
+            t.setFill(color);
             t.setTextOrigin(VPos.BASELINE);
             t.setManaged(false);
             pool.add(t);

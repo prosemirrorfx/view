@@ -28,6 +28,7 @@ public final class Toc extends VBox {
     public Toc(DocView view) {
         this.view = view;
         view.toc = this;
+        view.follow(this);
         getStyleClass().add("pm-toc");
         getStylesheets().add(Toc.class.getResource("editor.css").toExternalForm());
         var title = new Label("CONTENTS");

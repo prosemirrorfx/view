@@ -48,6 +48,7 @@ public final class DocView extends StackPane {
 
     public DocView(EditorModel model) {
         this.model = model;
+        getStyleClass().add("pm-view");
         blocks.getStyleClass().add("pm-doc");
         interim.getStyleClass().addAll("pm-text", "pm-interim");
         overlay.setMouseTransparent(true);
@@ -85,6 +86,14 @@ public final class DocView extends StackPane {
         });
         focusedProperty().addListener((o, a, b) -> invalidate());
         page.widthProperty().addListener((o, a, b) -> invalidate());
+        theme.addListener((o, was, t) -> {
+            var style = t.style();
+            scroll.setStyle(style);
+            findBar.setStyle(style);
+            caretLayer.apply(t);
+            lineNumbers.apply(t);
+            invalidate();
+        });
         sceneProperty().addListener((o, was, scene) -> {
             if (was != null) was.removePostLayoutPulseListener(paint);
             if (scene != null) { scene.addPostLayoutPulseListener(paint); invalidate(); }
@@ -154,6 +163,23 @@ public final class DocView extends StackPane {
 
     /** The zoom, for a status line that shows it. */
     public javafx.beans.property.ReadOnlyDoubleProperty zoomProperty() { return zoomProperty.getReadOnlyProperty(); }
+
+    final javafx.beans.property.ObjectProperty<Theme> theme = new javafx.beans.property.SimpleObjectProperty<>(Theme.LIGHT);
+
+    /** The colours of the editor and of the toolbar, status bar and contents panel made from it. Light until set. */
+    public void setTheme(Theme t) { theme.set(t); }
+
+    public Theme theme() { return theme.get(); }
+
+    public javafx.beans.property.ObjectProperty<Theme> themeProperty() { return theme; }
+
+    /** Keeps a part made from this view (toolbar, status bar, contents) in the view's theme, for as long as the part lives. */
+    void follow(javafx.scene.Node part) {
+        part.setStyle(theme.get().style());
+        javafx.beans.value.ChangeListener<Theme> l = (o, was, t) -> part.setStyle(t.style());
+        part.getProperties().put("pm-theme-listener", l);
+        theme.addListener(new javafx.beans.value.WeakChangeListener<>(l));
+    }
 
     public void find() { findBar.open(); }
 

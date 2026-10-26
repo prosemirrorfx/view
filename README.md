@@ -33,6 +33,12 @@ It brings `prosemirrorfx-core` and `prosemirrorfx-markdown` with it.
 
 Undoing back to the loaded text makes `isDirty()` false again. The byte-for-byte guarantee comes from `Lossless` in `prosemirrorfx-markdown`.
 
+## Colours
+
+`view.setTheme(Theme.DARK)` restyles the view and the toolbar, status bar and contents panel made from it; `Theme.LIGHT` is the default. A theme is a set of named colours: `bg`, `panel`, `text`, `muted`, `interim`, `code`, `link`, `line`, `border`, `active-line`, `hover`, `handle`, `select`, `select-focus`, and the four the view draws in code, `caret`, `selection`, `match` (find) and `number` (line numbers). Change one with `Theme.LIGHT.with("link", "#FF00AA")`, or build your own with `Theme.of("bg", "#101010", ...)` listing every name.
+
+The stylesheet reads the same names as looked-up colours (`-pm-bg`, `-pm-text`, ...), set inline by the theme so they beat any stylesheet rule. JavaFX's own buttons and text fields keep the host's theme.
+
 ## Live text
 
 `DocView.appendCommitted(text)` adds finished text at the end of the document as bullets, one undo step per call, and `setInterim(text)` shows words that are still arriving in grey after the end of the document; they are never part of the document. Both are safe to call from any thread. The demo's `--stream` flag shows it.

@@ -55,6 +55,7 @@ public final class StatusBar {
             fade.playFromStart();
         });
         show.run();
+        view.follow(bar);
         return bar;
     }
 
