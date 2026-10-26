@@ -61,6 +61,103 @@ class ViewKeysTest {
 
     javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
 
+    // ---- find options and the search API
+
+    javafx.scene.control.ToggleButton optionButton(String text) {
+        return fx(() -> view.lookupAll(".pm-find .pm-option").stream().map(n -> (javafx.scene.control.ToggleButton) n).filter(b -> b.getText().equals(text)).findFirst().orElseThrow());
+    }
+
+    void findFor(String query) {
+        press(F, true, false);
+        var box = (javafx.scene.control.TextField) fx(() -> view.lookup(".pm-find .text-field"));
+        fx(() -> box.setText(query));
+        pulse();
+    }
+
+    String findCount() { return fx(() -> ((javafx.scene.control.Label) view.lookup(".pm-find .label")).getText()); }
+
+    @Test void theFindBarCanMatchCaseWholeWordAndRegex() {
+        open(p("The cat sat. A CAT."), p("concat category|"));
+        findFor("cat");
+        assertEquals(4, fx(this::matchShades).size());
+        fx(() -> optionButton("Aa").setSelected(true));
+        pulse();
+        assertEquals(3, fx(this::matchShades).size(), "match case drops CAT");
+        fx(() -> optionButton("ab").setSelected(true));
+        pulse();
+        assertEquals(1, fx(this::matchShades).size(), "whole word as well leaves the lone cat");
+        fx(() -> { optionButton("Aa").setSelected(false); optionButton("ab").setSelected(false); optionButton(".*").setSelected(true); });
+        findFor("c.t");
+        assertEquals(4, fx(this::matchShades).size());
+    }
+
+    @Test void anInvalidRegexIsNamedInTheBarAndShadesNothing() {
+        open(p("some (text|"));
+        fx(() -> view.find());
+        fx(() -> optionButton(".*").setSelected(true));
+        findFor("(");
+        assertEquals("invalid", findCount());
+        assertTrue(fx(this::matchShades).isEmpty());
+    }
+
+    @Test void altCAltWAndAltRFlipTheOptionsFromTheFindBox() {
+        open(p("one|"));
+        findFor("o");
+        var box = fx(() -> view.lookup(".pm-find .text-field"));
+        for (var code : List.of(C, W, R)) fx(() -> Event.fireEvent(box, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, false, true, false)));
+        assertTrue(fx(() -> optionButton("Aa").isSelected() && optionButton("ab").isSelected() && optionButton(".*").isSelected()));
+        assertEquals("o", fx(() -> ((javafx.scene.control.TextField) box).getText()), "the letters were not typed into the box");
+    }
+
+    @Test void replaceAllInTheBarExpandsGroupsInRegexMode() {
+        open(p("mail ann@example and bob@test|"));
+        fx(() -> view.find());
+        fx(() -> optionButton(".*").setSelected(true));
+        findFor("(\\w+)@(\\w+)");
+        var replaceBox = (javafx.scene.control.TextField) fx(() -> view.lookupAll(".pm-find .text-field").stream().skip(1).findFirst().orElseThrow());
+        fx(() -> { replaceBox.setText("$2 at $1"); replaceBox.requestFocus(); });
+        fx(() -> Event.fireEvent(replaceBox, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", ENTER, false, true, false, false)));
+        pulse();
+        assertEquals("mail example at ann and test at bob", fx(() -> m.state().getDoc().textBetween(0, m.state().getDoc().getContent().getSize(), "", "")));
+    }
+
+    @Test void findAllGivesHitsWithLineAndColumnAndSelectHitScrollsToOne() {
+        var blocks = new Node[60];
+        for (var k = 0; k < blocks.length; k++) blocks[k] = p(k == 55 ? "the needle is here" : "filler paragraph number " + k);
+        open(blocks);
+        var hits = fx(() -> view.findAll("needle", prosemirrorfx.core.editor.Find.Options.PLAIN));
+        assertEquals(1, hits.size());
+        assertEquals("the needle is here", hits.getFirst().line());
+        assertEquals(4, hits.getFirst().column());
+        assertEquals(55, hits.getFirst().block());
+        assertEquals(0.0, fx(() -> view.scroll.getVvalue()), 1e-9);
+        fx(() -> view.selectHit(hits.getFirst()));
+        pulse();
+        pulse();
+        assertTrue(fx(() -> view.scroll.getVvalue()) > 0.7, "the page scrolled down to the hit");
+        assertEquals("needle", fx(() -> m.state().getDoc().textBetween(m.state().getSelection().getFrom(), m.state().getSelection().getTo(), "", "")));
+    }
+
+    @Test void replaceAllThroughTheApiCountsAndUndoesInOneStep() {
+        open(p("a cat, a cat"), p("cat|"));
+        var done = fx(() -> view.replaceAll("cat", prosemirrorfx.core.editor.Find.Options.PLAIN, "dog"));
+        assertEquals(3, done);
+        expect("p(\"a dog, a dog\"), p(\"dog|\")");
+        press(Z, true, false);
+        expect("p(\"a cat, a cat\"), p(\"cat|\")");
+        assertEquals(0, fx(() -> view.replaceAll("zebra", prosemirrorfx.core.editor.Find.Options.PLAIN, "x")));
+    }
+
+    @Test void aHitInsideFoldedTextOpensTheFoldWhenSelected() {
+        open(family());
+        press(UP, true, false);
+        assertEquals(List.of("parent", "sibling"), shownTexts());
+        var hit = fx(() -> view.findAll("child two", prosemirrorfx.core.editor.Find.Options.PLAIN).getFirst());
+        fx(() -> view.selectHit(hit));
+        pulse();
+        assertEquals(List.of("parent", "child one", "child two", "sibling"), shownTexts());
+    }
+
     // ---- source lines
 
     List<String> numberTexts() { return fx(() -> visibleNumbers().stream().map(Text::getText).toList()); }
@@ -720,7 +817,7 @@ class ViewKeysTest {
         fx(() -> findBox.setText("cat"));
         pulse();
         expect("p(\"The [cat] sat.\"), p(\"A cat and a CAT.\")");
-        assertEquals("1 of 3", fx(() -> ((javafx.scene.control.Label) bar.getChildren().get(1)).getText()));
+        assertEquals("1 of 3", fx(() -> ((javafx.scene.control.Label) bar.getChildren().stream().filter(n -> n instanceof javafx.scene.control.Label).findFirst().orElseThrow()).getText()));
         assertEquals(3, fx(() -> matchShades().size()), "every match is shaded");
         press(ENTER);
         expect("p(\"The cat sat.\"), p(\"A [cat] and a CAT.\")");

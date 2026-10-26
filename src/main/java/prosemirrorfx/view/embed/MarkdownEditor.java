@@ -4,6 +4,7 @@ import com.atlassian.prosemirror.model.Node;
 import java.util.*;
 import javafx.beans.property.*;
 import prosemirrorfx.core.editor.EditorModel;
+import prosemirrorfx.core.editor.Find;
 import prosemirrorfx.markdown.Lossless;
 import prosemirrorfx.core.pm.Pm;
 import prosemirrorfx.markdown.SourceMap;
@@ -80,6 +81,17 @@ public final class MarkdownEditor {
     public void onChange(Runnable listener) { listeners.add(listener); }
 
     public void focus() { view.requestFocus(); }
+
+    /** Search, for a host's own search panel: every match with its range, line text and column; select one and scroll to it; replace all with a count. */
+    public List<Find.Hit> findAll(String query, Find.Options options) { return view.findAll(query, options); }
+
+    public String findProblem(String query, Find.Options options) { return view.findProblem(query, options); }
+
+    public void selectRange(int from, int to) { view.selectRange(from, to); }
+
+    public void selectHit(Find.Hit hit) { view.selectHit(hit); }
+
+    public int replaceAll(String query, Find.Options options, String with) { return view.replaceAll(query, options, with); }
 
     /** Source positions, for a source view that keeps the caret line and for search jumps. Lines and columns count from 0; offsets index getMarkdown(). */
     public SourceMap sourceMap() { return view.sourceMap(); }

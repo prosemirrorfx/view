@@ -11,6 +11,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 import prosemirrorfx.core.editor.EditorModel;
+import prosemirrorfx.core.editor.Find;
 import prosemirrorfx.markdown.SourceMap;
 
 /**
@@ -43,7 +44,7 @@ public final class DocView extends StackPane {
     final FindBar findBar;
     final Ime ime;
     /** Find matches to shade; empty when the find bar is closed. */
-    List<prosemirrorfx.core.editor.Find.Match> highlights = List.of();
+    List<Find.Match> highlights = List.of();
     double zoom = 1;
     FileSession file;
     /** What the attached FileSession reports ("notes.md · saved 10:42"); empty without one. */
@@ -216,6 +217,31 @@ public final class DocView extends StackPane {
     }
 
     public void find() { findBar.open(); }
+
+    /** Every match of a query, with its document range, block, the line it is on and its column in that line. A query that does not parse as a regular expression finds nothing (see findProblem). */
+    public List<Find.Hit> findAll(String query, Find.Options options) {
+        return Find.hits(model.state().getDoc(), query, options);
+    }
+
+    /** Why a query cannot be used (an unparseable regular expression), or null. */
+    public String findProblem(String query, Find.Options options) {
+        return Find.problem(query, options);
+    }
+
+    /** Selects a range and scrolls it into view; folded text around it opens first. */
+    public void selectRange(int from, int to) {
+        model.dispatch(Find.selectMatch(model.state(), new Find.Match(from, to)));
+    }
+
+    public void selectHit(Find.Hit hit) { selectRange(hit.from(), hit.to()); }
+
+    /** Replaces every match in one undo step and says how many there were. In regex mode the replacement may use $1 and the like; one that names a group the pattern lacks throws. */
+    public int replaceAll(String query, Find.Options options, String with) {
+        var all = Find.replacements(model.state().getDoc(), query, options, with);
+        if (all.isEmpty()) return 0;
+        model.dispatch(Find.replaceAll(model.state(), all));
+        return all.size();
+    }
 
     // ---- live text: speech recognition, a stream, a script
 

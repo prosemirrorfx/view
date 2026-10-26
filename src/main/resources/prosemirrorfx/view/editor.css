@@ -91,3 +91,6 @@
 .pm-code-copy:hover { -fx-text-fill: -pm-text; }
 .pm-code-inline-copy { -fx-font-family: "Segoe UI"; -fx-font-size: 10px; -fx-text-fill: -pm-muted; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-color: -pm-code-border; -fx-border-radius: 3; -fx-background-color: -pm-bg; -fx-background-radius: 3; }
 .pm-code-inline-copy:hover { -fx-text-fill: -pm-text; }
+
+/* The three find options beside the find box. */
+.pm-find .pm-option { -fx-font-family: "Segoe UI"; -fx-font-size: 11px; -fx-padding: 2 5; }
