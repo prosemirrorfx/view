@@ -496,6 +496,17 @@ class ViewKeysTest {
         expect("p(\"|\")");
     }
 
+    @Test void typingMeasuresOnlyTheEditedParagraph() {
+        var blocks = new java.util.ArrayList<Node>();
+        blocks.add(p("ab|cd"));
+        for (var k = 0; k < 60; k++) blocks.add(p("another paragraph that stays as it is, number " + k));
+        open(blocks.toArray(Node[]::new));
+        Flow.shaped = 0;
+        type("x");
+        assertTrue(Flow.shaped <= 4, "only the edited paragraph is shaped again, not all 61: " + Flow.shaped);
+        expect("p(\"abx|cd\"), " + java.util.stream.IntStream.range(0, 60).mapToObj(k -> "p(\"another paragraph that stays as it is, number " + k + "\")").collect(java.util.stream.Collectors.joining(", ")));
+    }
+
     @Test void enterThenBackspaceJoins() {
         open(p("ab|cd"));
         press(ENTER);

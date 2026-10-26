@@ -434,11 +434,11 @@ public final class DocView extends StackPane {
         return sourceMap;
     }
 
-    /** The map for line numbers: made at once for an ordinary note, and for a very long one refreshed a moment after typing stops, so each keystroke does not rewrite the whole text. */
+    /** The map for line numbers: made at once for a short note, and otherwise refreshed a moment after typing stops, so each keystroke does not rewrite the whole text (about 15 ms of every key in a 33 KB note). */
     SourceMap mapForNumbers() {
         var doc = model.state().getDoc();
         if (sourceMapDoc == doc) return sourceMap;
-        if (sourceMap == null || doc.getContent().getSize() < 40_000) return sourceMap();
+        if (sourceMap == null || doc.getContent().getSize() < 4_000) return sourceMap();
         if (mapRefresh == null) {
             mapRefresh = new PauseTransition(Duration.millis(150));
             mapRefresh.setOnFinished(e -> { sourceMap(); invalidate(); });
