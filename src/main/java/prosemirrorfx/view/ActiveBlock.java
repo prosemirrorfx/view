@@ -55,6 +55,6 @@ final class ActiveBlock {
         var first = lines.isEmpty() ? null : lines.getFirst().bounds();
         var y = first == null ? flow.getLayoutBounds().getCenterY() : (first.getMinY() + first.getMaxY()) / 2;
         var mid = front.sceneToLocal(flow.localToScene(0, y)).getY();
-        handle.relocate(view.page.getPadding().getLeft() - handle.getWidth() - 8, mid - handle.getHeight() / 2);
+        handle.relocate(view.page.getPadding().getLeft() - handle.getWidth() - 16, mid - handle.getHeight() / 2);
     }
 }

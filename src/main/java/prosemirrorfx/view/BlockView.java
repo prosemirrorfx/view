@@ -20,6 +20,8 @@ public final class BlockView {
     final Label marker;
     List<BlockView> children;
     int start;
+    /** Folded away: not shown, not laid out, and not part of Positions. */
+    boolean hidden;
 
     BlockView(Node node, Region fx, Pane box, TextFlow flow, Label marker, List<BlockView> children, int start) {
         this.node = node;

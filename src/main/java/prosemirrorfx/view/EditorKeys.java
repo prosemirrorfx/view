@@ -64,8 +64,8 @@ final class EditorKeys {
             case INSERT -> shift ? dispatch(Clip.paste(state)) : ctrl && Clip.copy(state);
             case TAB -> { run(shift ? outdent : indent); yield true; }
             case LEFT, RIGHT -> ctrl ? moveTo(Motion.word(view.positions, head, code == LEFT ? -1 : 1), shift)
-                    : move(Motion.horizontal(state, code == LEFT ? -1 : 1, shift));
-            case UP, DOWN -> vertical(code == UP ? -1 : 1, shift);
+                    : move(Motion.horizontal(state, code == LEFT ? -1 : 1, shift, view.folds));
+            case UP, DOWN -> ctrl ? (code == UP ? view.foldAtCaret() : view.unfoldAtCaret()) : vertical(code == UP ? -1 : 1, shift);
             case HOME, END -> ctrl ? moveTo(code == HOME ? view.positions.textblocks.getFirst().start : Positions.end(view.positions.textblocks.getLast()), shift)
                     : moveTo(Motion.lineEdge(view.positions, head, code == END), shift);
             case A -> ctrl && run(selectAll);

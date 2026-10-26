@@ -7,7 +7,7 @@
 }
 
 .pm-scroll, .pm-scroll > .viewport { -fx-background-color: -pm-bg; }
-.pm-page { -fx-padding: 24 40 40 40; -fx-font-size: 15px; }
+.pm-page { -fx-padding: 24 40 40 56; -fx-font-size: 15px; }
 .pm-doc { -fx-spacing: 10; }
 
 .pm-text { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-fill: -pm-text; }
@@ -31,7 +31,7 @@
 
 .pm-current .label { -fx-text-fill: -pm-link; }
 
-.pm-page.pm-numbered { -fx-padding: 24 40 40 88; }
+.pm-page.pm-numbered { -fx-padding: 24 40 40 104; }
 
 .pm-toc { -fx-background-color: -pm-panel; -fx-border-color: -pm-line; -fx-border-width: 0 1 0 0; -fx-pref-width: 240; }
 .pm-toc-title { -fx-font-family: "Segoe UI"; -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pm-muted; -fx-padding: 12 12 6 12; }
@@ -71,3 +71,7 @@
 /* Marks that only a Markdown file read through Lossless carries. */
 .pm-text.code { -fx-font-family: "Consolas"; -fx-fill: -pm-code; }
 .pm-text.link { -fx-fill: -pm-link; -fx-underline: true; }
+
+/* The fold control beside a block that has something to fold. */
+.pm-fold { -fx-font-family: "Segoe UI"; -fx-font-size: 0.95em; -fx-text-fill: -pm-handle; -fx-padding: 0 2; -fx-cursor: hand; }
+.pm-fold:hover { -fx-text-fill: -pm-text; }

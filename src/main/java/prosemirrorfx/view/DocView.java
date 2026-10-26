@@ -2,8 +2,10 @@ package prosemirrorfx.view;
 
 import com.atlassian.prosemirror.model.Node;
 import com.atlassian.prosemirror.state.Transaction;
-import java.util.List;
+import java.util.*;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import prosemirrorfx.core.editor.EditorModel;
@@ -27,6 +29,9 @@ public final class DocView extends StackPane {
     Positions positions;
     final LineNumbers lineNumbers = new LineNumbers(gutter);
     final ActiveBlock active = new ActiveBlock(this, back, front);
+    final Folds folds = new Folds();
+    final FoldControls foldControls = new FoldControls(this, front);
+    final ReadOnlyObjectWrapper<Set<String>> foldedKeys = new ReadOnlyObjectWrapper<>(Set.of());
     boolean numbered;
     /** Set by the TOC when it is used: the next reveal puts the caret line near the top. */
     boolean revealAtTop;
@@ -80,8 +85,12 @@ public final class DocView extends StackPane {
         render(model.state().getDoc());
         model.onChange((old, now) -> {
             changedAt = System.nanoTime();
-            if (old.getDoc() != now.getDoc()) render(now.getDoc());
+            if (old.getDoc() != now.getDoc()) {
+                folds.remap(old.getDoc(), model.lastTransaction(), now.getDoc());
+                render(now.getDoc());
+            }
             renderedAt = System.nanoTime();
+            if (folds.openAround(now.getDoc(), now.getSelection().getHead())) refreshFolds(); else publishFolded();
             reveal = true;
             invalidate();
         });
@@ -279,6 +288,7 @@ public final class DocView extends StackPane {
         caretLayer.paintComposition(ime.composingFrom(), ime.composingTo(), positions);
         if (numbered) lineNumbers.paint(positions);
         active.paint(positions);
+        foldControls.paint(views, folds);
         if (TRACE && changedAt > 0) System.err.printf("pm-trace render=%.2fms change-to-caret=%.2fms%n", (renderedAt - changedAt) / 1e6, (System.nanoTime() - changedAt) / 1e6);
         changedAt = 0;
         if (reveal) revealCaret();
@@ -288,8 +298,89 @@ public final class DocView extends StackPane {
     void render(Node doc) {
         views = Reconciler.children(views, doc, 0, -1);
         Reconciler.patch(blocks, views);
+        folds.layout(doc);
+        folds.mark(views);
         positions = new Positions(views);
         placeInterim();
+    }
+
+    /** After the folds changed with no new document: what is hidden is worked out again, and the view is laid out and painted afresh. */
+    void refreshFolds() {
+        folds.layout(model.state().getDoc());
+        folds.mark(views);
+        positions = new Positions(views);
+        placeInterim();
+        publishFolded();
+        invalidate();
+    }
+
+    void publishFolded() {
+        var keys = Collections.unmodifiableSortedSet(folds.keys(model.state().getDoc()));
+        if (!keys.equals(foldedKeys.get())) foldedKeys.set(keys);
+    }
+
+    /** Folds changed (by the host, a key or a click): a caret that is now hidden moves to the end of the line that owns the fold. */
+    void foldsChanged() {
+        var doc = model.state().getDoc();
+        folds.layout(doc);
+        var hidden = folds.hiddenAt(model.state().getSelection().getHead());
+        if (hidden != null) model.select(prosemirrorfx.core.pm.Pm.cursor(doc, hidden[0] - 1));
+        refreshFolds();
+    }
+
+    /** The keys of the blocks that are folded (sorted, unmodifiable). A key is the block's index path, the same on reopening a file that was not edited. */
+    public Set<String> folded() { return foldedKeys.get(); }
+
+    /** Changes when a block is folded or unfolded, by the user, by an edit that removes a folded block, or by the host. */
+    public ReadOnlyObjectProperty<Set<String>> foldedProperty() { return foldedKeys.getReadOnlyProperty(); }
+
+    /** Folds exactly these blocks, as remembered from folded(). A key that names no foldable block is ignored. */
+    public void setFolded(Collection<String> keys) {
+        var doc = model.state().getDoc();
+        folds.folded.clear();
+        for (var key : keys) {
+            var pos = Folds.position(doc, key);
+            if (pos >= 0) folds.folded.add(pos);
+        }
+        foldsChanged();
+    }
+
+    public void collapseAll() {
+        folds.layout(model.state().getDoc());
+        folds.folded.addAll(folds.foldables);
+        foldsChanged();
+    }
+
+    public void expandAll() {
+        folds.folded.clear();
+        foldsChanged();
+    }
+
+    /** Folds the innermost block around the caret that is not folded yet (an item with nested lines, a heading with its section). False when there is none. */
+    public boolean foldAtCaret() {
+        var doc = model.state().getDoc();
+        for (var pos : folds.around(doc, model.state().getSelection().getHead())) {
+            if (folds.folded.contains(pos)) continue;
+            folds.folded.add(pos);
+            foldsChanged();
+            return true;
+        }
+        return false;
+    }
+
+    /** Unfolds the innermost folded block around the caret. False when there is none. */
+    public boolean unfoldAtCaret() {
+        for (var pos : folds.around(model.state().getDoc(), model.state().getSelection().getHead())) {
+            if (!folds.folded.remove(pos)) continue;
+            foldsChanged();
+            return true;
+        }
+        return false;
+    }
+
+    void toggleFold(int pos) {
+        if (!folds.folded.remove(pos)) folds.folded.add(pos);
+        foldsChanged();
     }
 
     void revealCaret() {

@@ -80,6 +80,17 @@ public final class MarkdownEditor {
 
     public void focus() { view.requestFocus(); }
 
+    /** Folding, for a host that remembers it per file: the keys of the folded blocks (valid for the same text), and restoring them. */
+    public Set<String> folded() { return view.folded(); }
+
+    public ReadOnlyObjectProperty<Set<String>> foldedProperty() { return view.foldedProperty(); }
+
+    public void setFolded(Collection<String> keys) { view.setFolded(keys); }
+
+    public void collapseAll() { view.collapseAll(); }
+
+    public void expandAll() { view.expandAll(); }
+
     /** Clipboard actions for a host's own toolbar or menu: what Ctrl+C, X, V and Shift+V do. Each says whether it did anything. */
     public boolean copy() { return view.copy(); }
 

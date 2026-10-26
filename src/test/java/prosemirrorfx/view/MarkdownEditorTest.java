@@ -72,6 +72,20 @@ class MarkdownEditorTest {
         assertFalse(fx(ed::cut), "nothing is selected");
     }
 
+    @Test void foldsCanBeReadAndRestoredAndNeverTouchTheText() {
+        var md = "- parent\n  - child\n- sibling\n";
+        var ed = shown(md);
+        fx(ed::collapseAll);
+        var keys = fx(ed::folded);
+        assertEquals(java.util.Set.of("0/0"), keys);
+        var again = shown(md);
+        assertTrue(fx(again::folded).isEmpty());
+        fx(() -> again.setFolded(keys));
+        assertEquals(keys, fx(again::folded));
+        assertEquals(md, fx(again::getMarkdown), "folding leaves the text as it was");
+        assertFalse(fx(again::isDirty), "and is not an edit");
+    }
+
     @Test void listenerHearsEditsButNotLoads() {
         var calls = new AtomicInteger();
         var ed = shown("a\n");

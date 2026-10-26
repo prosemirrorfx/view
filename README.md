@@ -33,6 +33,17 @@ It brings `prosemirrorfx-core` and `prosemirrorfx-markdown` with it.
 
 Undoing back to the loaded text makes `isDirty()` false again. The byte-for-byte guarantee comes from `Lossless` in `prosemirrorfx-markdown`.
 
+## Folding
+
+A list item with nested lines folds away everything after its first paragraph, and a heading folds away its section, up to the next heading of the same or a higher level. A small triangle in the left margin shows and toggles each fold; Ctrl+Up folds the innermost block around the caret (then the one around that), Ctrl+Down unfolds it. Folded lines are skipped by the arrow keys, and anything that moves the caret into folded text (find, the contents panel) opens the fold first. Folding is view state: the document, its Markdown and the undo history are not touched.
+
+    view.collapseAll();  view.expandAll();             // every foldable block
+    var keys = view.folded();                          // a sorted set of strings such as "5" or "6/0/1"
+    view.setFolded(keys);                              // restore them later; keys that fit no foldable block are ignored
+    view.foldedProperty().addListener(...);            // changes when the user, an edit or the host changes a fold
+
+A key is the block's index path (child 6 of the document, its child 0, that one's child 1), so it names the same block when an unedited file is reopened. Edits made while the editor is open move the folds with their blocks. `MarkdownEditor` has the same five calls.
+
 ## Colours
 
 `view.setTheme(Theme.DARK)` restyles the view and the toolbar, status bar and contents panel made from it; `Theme.LIGHT` is the default. A theme is a set of named colours: `bg`, `panel`, `text`, `muted`, `interim`, `code`, `link`, `line`, `border`, `active-line`, `hover`, `handle`, `select`, `select-focus`, and the four the view draws in code, `caret`, `selection`, `match` (find) and `number` (line numbers). Change one with `Theme.LIGHT.with("link", "#FF00AA")`, or build your own with `Theme.of("bg", "#101010", ...)` listing every name.

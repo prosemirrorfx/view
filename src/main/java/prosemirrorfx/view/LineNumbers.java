@@ -15,7 +15,7 @@ final class LineNumbers {
 
     Font font = Font.font("Segoe UI", 11);
     Color color = Theme.LIGHT.color("number");
-    static final double RIGHT_EDGE = 50;
+    static final double RIGHT_EDGE = 56;
 
     final Pane gutter;
     final List<Text> pool = new ArrayList<>();

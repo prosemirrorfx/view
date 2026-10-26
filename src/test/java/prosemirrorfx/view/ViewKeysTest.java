@@ -56,6 +56,135 @@ class ViewKeysTest {
 
     javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
 
+    // ---- folding
+
+    boolean shown(javafx.scene.Node n) {
+        for (var p = n; p != null && p != view; p = p.getParent()) if (!p.isVisible()) return false;
+        return true;
+    }
+
+    /** The text of every block that is actually on screen, in order. */
+    List<String> shownTexts() {
+        return fx(() -> flows().stream().filter(this::shown).map(f -> f.getChildren().stream().map(t -> ((Text) t).getText()).reduce("", String::concat)).toList());
+    }
+
+    Node family() {
+        return ul(li(p("parent|"), ul(li(p("child one")), li(p("child two")))), li(p("sibling")));
+    }
+
+    @Test void ctrlUpFoldsTheItemAtTheCaretAndCtrlDownUnfoldsIt() {
+        open(family());
+        assertEquals(List.of("parent", "child one", "child two", "sibling"), shownTexts());
+        press(UP, true, false);
+        assertEquals(List.of("parent", "sibling"), shownTexts());
+        assertEquals(java.util.Set.of("0/0"), fx(view::folded));
+        expect("ul(li(p(\"parent|\"), ul(li(p(\"child one\")), li(p(\"child two\")))), li(p(\"sibling\")))");
+        press(DOWN, true, false);
+        assertEquals(List.of("parent", "child one", "child two", "sibling"), shownTexts());
+        assertTrue(fx(view::folded).isEmpty());
+    }
+
+    @Test void foldingMovesACaretThatWasInsideTheHiddenLinesToTheOwnerLine() {
+        open(ul(li(p("parent"), ul(li(p("child one|")), li(p("child two")))), li(p("sibling"))));
+        assertTrue(fx(view::foldAtCaret));
+        expect("ul(li(p(\"parent|\"), ul(li(p(\"child one\")), li(p(\"child two\")))), li(p(\"sibling\")))");
+        assertEquals(List.of("parent", "sibling"), shownTexts());
+    }
+
+    @Test void arrowKeysStepOverFoldedLinesInBothDirections() {
+        open(family());
+        press(UP, true, false);
+        press(RIGHT);
+        expect("ul(li(p(\"parent\"), ul(li(p(\"child one\")), li(p(\"child two\")))), li(p(\"|sibling\")))");
+        press(LEFT);
+        expect("ul(li(p(\"parent|\"), ul(li(p(\"child one\")), li(p(\"child two\")))), li(p(\"sibling\")))");
+        press(DOWN);
+        assertTrue(fx(() -> show(m)).contains("li(p(\"sibl"), "Down from the folded item goes to the next visible line: " + fx(() -> show(m)));
+    }
+
+    @Test void aHeadingFoldsItsSectionUpToTheNextHeadingOfTheSameOrHigherLevel() {
+        open(h(1, "Head|"), p("body"), h(2, "Sub"), p("more"), h(1, "Next"), p("end"));
+        press(UP, true, false);
+        assertEquals(List.of("Head", "Next", "end"), shownTexts());
+        assertEquals(java.util.Set.of("0"), fx(view::folded));
+        press(DOWN, true, false);
+        assertEquals(List.of("Head", "body", "Sub", "more", "Next", "end"), shownTexts());
+    }
+
+    @Test void clickingTheFoldControlFoldsAndUnfolds() {
+        open(family());
+        var control = fx(() -> view.foldControls.pool.stream().filter(l -> l.isVisible()).findFirst().orElseThrow());
+        assertEquals("▾", fx(control::getText));
+        var click = new MouseEvent(MouseEvent.MOUSE_CLICKED, 1, 1, 1, 1, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, false, false, false, null);
+        fx(() -> Event.fireEvent(control, click));
+        pulse();
+        assertEquals(List.of("parent", "sibling"), shownTexts());
+        assertEquals("▸", fx(control::getText));
+        fx(() -> Event.fireEvent(control, click));
+        pulse();
+        assertEquals(List.of("parent", "child one", "child two", "sibling"), shownTexts());
+    }
+
+    @Test void aFoldStaysOnItsHeadingWhileTheTextAroundItIsEdited() {
+        open(p("first"), h(1, "Head"), p("body|"));
+        assertTrue(fx(view::foldAtCaret));
+        fx(() -> m.dispatch(m.state().getTr().insertText("ZZ", 1, 1)));
+        pulse();
+        assertEquals(List.of("ZZfirst", "Head"), shownTexts(), "the section is still folded after text went in before it");
+        type("X");
+        assertEquals(List.of("ZZfirst", "HeadX"), shownTexts(), "and after typing on the heading itself");
+        assertEquals(java.util.Set.of("1"), fx(view::folded));
+    }
+
+    @Test void theFoldedKeysComeBackOnAFreshViewOfTheSameText() {
+        open(h(1, "A"), p("under a"), ul(li(p("item"), p("second line")), li(p("plain"))));
+        fx(view::collapseAll);
+        var keys = fx(view::folded);
+        var folded = shownTexts();
+        assertEquals(List.of("A"), folded, "the fold on A hides everything under it");
+        assertEquals(java.util.Set.of("0", "2/0"), keys);
+        open(h(1, "A"), p("under a"), ul(li(p("item"), p("second line")), li(p("plain"))));
+        assertEquals(5, shownTexts().size(), "a fresh view shows everything");
+        fx(() -> view.setFolded(keys));
+        pulse();
+        assertEquals(folded, shownTexts());
+        fx(() -> view.setFolded(List.of("0", "17/3/9", "nonsense")));
+        assertEquals(java.util.Set.of("0"), fx(view::folded), "keys that name no foldable block are ignored");
+    }
+
+    @Test void collapseAllAndExpandAllAndTheChangeEvent() {
+        open(h(1, "A"), p("under a"), h(2, "B"), p("under b"), ul(li(p("item"), p("second"))));
+        var events = new java.util.ArrayList<java.util.Set<String>>();
+        fx(() -> view.foldedProperty().addListener((o, was, now) -> events.add(now)));
+        fx(view::collapseAll);
+        assertEquals(List.of("A"), shownTexts(), "everything is inside the section of A");
+        assertEquals(java.util.Set.of("0", "2", "4/0"), fx(view::folded));
+        fx(view::expandAll);
+        assertEquals(6, shownTexts().size(), "A, under a, B, under b, item and second are all shown again");
+        assertEquals(2, events.size());
+        fx(view::expandAll);
+        assertEquals(2, events.size(), "nothing changed, so nothing fired");
+    }
+
+    @Test void aJumpIntoFoldedTextOpensTheFold() {
+        open(family());
+        press(UP, true, false);
+        assertEquals(List.of("parent", "sibling"), shownTexts());
+        fx(() -> view.model().select(prosemirrorfx.core.pm.Pm.cursor(m.state().getDoc(), Fixtures.posAfter(m.state().getDoc(), "child two"))));
+        pulse();
+        assertEquals(List.of("parent", "child one", "child two", "sibling"), shownTexts());
+        assertTrue(fx(view::folded).isEmpty());
+    }
+
+    @Test void loadingADocumentClearsTheFolds() {
+        open(family());
+        press(UP, true, false);
+        fx(() -> m.load(doc(ul(li(p("a"), p("b"))))));
+        pulse();
+        assertTrue(fx(view::folded).isEmpty());
+        assertEquals(List.of("a", "b"), shownTexts());
+    }
+
     @Test void cutCopyAndPasteCanBeCalledFromAHostToolbar() {
         open(p("one [two] three"));
         assertTrue(fx(view::copy));

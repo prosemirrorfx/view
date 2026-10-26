@@ -15,6 +15,7 @@ final class Positions {
 
     void collect(List<BlockView> views) {
         for (var v : views) {
+            if (v.hidden) continue;
             if (v.isTextblock()) textblocks.add(v);
             else collect(v.children);
         }

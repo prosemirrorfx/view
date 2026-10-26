@@ -10,14 +10,20 @@ import static prosemirrorfx.view.Positions.*;
 /** Caret movement: by character through ResolvedPos, by line and to line ends through the TextFlow layout. */
 final class Motion {
 
-    static Selection horizontal(PMEditorState s, int dir, boolean extend) {
+    /** One character left or right; folded lines are stepped over, so the caret never lands in text that is not shown. */
+    static Selection horizontal(PMEditorState s, int dir, boolean extend, Folds folds) {
         var sel = s.getSelection();
         var doc = s.getDoc();
         if (!extend && !sel.getEmpty()) return cursor(doc, dir < 0 ? sel.getFrom() : sel.getTo());
         var next = sel.getHead() + dir;
-        if (next < 0 || next > doc.getContent().getSize()) return null;
-        var found = findFrom(doc.resolve(next), dir);
-        return found == null ? null : select(s, found.getHead(), extend);
+        while (next >= 0 && next <= doc.getContent().getSize()) {
+            var found = findFrom(doc.resolve(next), dir);
+            if (found == null) return null;
+            var hidden = folds.hiddenAt(found.getHead());
+            if (hidden == null) return select(s, found.getHead(), extend);
+            next = dir > 0 ? hidden[1] : hidden[0] - 1;
+        }
+        return null;
     }
 
     static Selection select(PMEditorState s, int head, boolean extend) {
