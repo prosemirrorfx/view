@@ -6,6 +6,7 @@ import javafx.beans.property.*;
 import prosemirrorfx.core.editor.EditorModel;
 import prosemirrorfx.markdown.Lossless;
 import prosemirrorfx.core.pm.Pm;
+import prosemirrorfx.markdown.SourceMap;
 import prosemirrorfx.view.*;
 
 /**
@@ -79,6 +80,19 @@ public final class MarkdownEditor {
     public void onChange(Runnable listener) { listeners.add(listener); }
 
     public void focus() { view.requestFocus(); }
+
+    /** Source positions, for a source view that keeps the caret line and for search jumps. Lines and columns count from 0; offsets index getMarkdown(). */
+    public SourceMap sourceMap() { return view.sourceMap(); }
+
+    public int caretLine() { return view.caretLine(); }
+
+    public int caretSourceOffset() { return view.caretSourceOffset(); }
+
+    public void goToLine(int line) { view.goToLine(line); }
+
+    public void goToSource(int line, int column) { view.goToSource(line, column); }
+
+    public void setCaretSourceOffset(int offset) { view.setCaretSourceOffset(offset); }
 
     /** Folding, for a host that remembers it per file: the keys of the folded blocks (valid for the same text), and restoring them. */
     public Set<String> folded() { return view.folded(); }

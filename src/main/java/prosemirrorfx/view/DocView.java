@@ -3,12 +3,15 @@ package prosemirrorfx.view;
 import com.atlassian.prosemirror.model.Node;
 import com.atlassian.prosemirror.state.Transaction;
 import java.util.*;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 import prosemirrorfx.core.editor.EditorModel;
+import prosemirrorfx.markdown.SourceMap;
 
 /**
  * The editor control: the document drawn as JavaFX nodes on a scrolling page, a caret layer above it,
@@ -289,7 +292,7 @@ public final class DocView extends StackPane {
         caretLayer.paint(model.state().getSelection(), positions, isFocused());
         caretLayer.paintMatches(highlights, positions);
         caretLayer.paintComposition(ime.composingFrom(), ime.composingTo(), positions);
-        if (numbered) lineNumbers.paint(positions);
+        if (numbered) lineNumbers.paint(positions, mapForNumbers());
         active.paint(positions);
         foldControls.paint(views, folds);
         codeBoxes.paint(positions, model.state().getSelection());
@@ -382,6 +385,46 @@ public final class DocView extends StackPane {
         }
         return false;
     }
+
+    SourceMap sourceMap;
+    Node sourceMapDoc;
+    PauseTransition mapRefresh;
+
+    /** Where each part of the document sits in the Markdown it is written as, and back; built when asked and kept until the document changes. */
+    public SourceMap sourceMap() {
+        var doc = model.state().getDoc();
+        if (sourceMapDoc != doc) {
+            sourceMap = SourceMap.of(doc);
+            sourceMapDoc = doc;
+        }
+        return sourceMap;
+    }
+
+    /** The map for line numbers: made at once for an ordinary note, and for a very long one refreshed a moment after typing stops, so each keystroke does not rewrite the whole text. */
+    SourceMap mapForNumbers() {
+        var doc = model.state().getDoc();
+        if (sourceMapDoc == doc) return sourceMap;
+        if (sourceMap == null || doc.getContent().getSize() < 40_000) return sourceMap();
+        if (mapRefresh == null) {
+            mapRefresh = new PauseTransition(Duration.millis(150));
+            mapRefresh.setOnFinished(e -> { sourceMap(); invalidate(); });
+        }
+        mapRefresh.playFromStart();
+        return sourceMap;
+    }
+
+    /** The source line (from 0) the caret is on. */
+    public int caretLine() { return sourceMap().line(model.state().getSelection().getHead()); }
+
+    /** The caret's offset into the Markdown text (what MarkdownEditor.getMarkdown returns). */
+    public int caretSourceOffset() { return sourceMap().offset(model.state().getSelection().getHead()); }
+
+    /** Puts the caret at a source line and column (from 0); a line with no text of its own (a blank line) puts it at the start of the next block. */
+    public void goToSource(int line, int column) { model.select(prosemirrorfx.core.pm.Pm.cursor(model.state().getDoc(), sourceMap().docPosition(line, column))); }
+
+    public void goToLine(int line) { goToSource(line, 0); }
+
+    public void setCaretSourceOffset(int offset) { model.select(prosemirrorfx.core.pm.Pm.cursor(model.state().getDoc(), sourceMap().docPositionAtOffset(offset))); }
 
     void toggleFold(int pos) {
         if (!folds.folded.remove(pos)) folds.folded.add(pos);

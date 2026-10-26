@@ -61,6 +61,50 @@ class ViewKeysTest {
 
     javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
 
+    // ---- source lines
+
+    List<String> numberTexts() { return fx(() -> visibleNumbers().stream().map(Text::getText).toList()); }
+
+    @Test void lineNumbersAreTheFilesOwnAndAFoldShowsAsAJump() {
+        openMarkdown("# One\n\ntext a\n\n## Two\n\ntext b\n\n# Three\n\nend\n");
+        clickTool(EditorAction.LINES);
+        assertEquals(List.of("1", "3", "5", "7", "9", "11"), numberTexts());
+        fx(() -> view.setFolded(List.of("0")));
+        pulse();
+        assertEquals(List.of("1", "9", "11"), numberTexts(), "folding the first heading jumps from line 1 to line 9");
+        fx(view::expandAll);
+        pulse();
+        assertEquals(List.of("1", "3", "5", "7", "9", "11"), numberTexts());
+    }
+
+    @Test void everySourceLineOfAParagraphThatWrapsInTheFileGetsItsOwnNumber() {
+        openMarkdown("first\nsecond\nthird\n\nlast\n");
+        clickTool(EditorAction.LINES);
+        assertEquals(List.of("1", "2", "3", "5"), numberTexts());
+    }
+
+    @Test void theCaretLineAndOffsetFollowTheSourceAndGoToLinePutsTheCaretThere() {
+        openMarkdown("# One\n\nsecond block\n\n- item\n");
+        fx(() -> view.goToLine(2));
+        pulse();
+        assertEquals(2, fx(view::caretLine));
+        assertEquals("# One\n\nsecond block\n\n- item\n".indexOf("second"), fx(view::caretSourceOffset));
+        fx(() -> view.setCaretSourceOffset("# One\n\nsecond block\n\n- item\n".indexOf("item") + 2));
+        assertEquals(4, fx(view::caretLine));
+        fx(() -> view.goToSource(0, 2));
+        assertEquals(0, fx(view::caretLine));
+        assertEquals(2, fx(() -> view.sourceMap().column(m.state().getSelection().getHead())));
+    }
+
+    @Test void aSourceViewToggleCanKeepTheCaretLineThroughAnEdit() {
+        openMarkdown("alpha\n\nbeta\n\ngamma\n");
+        fx(() -> view.goToLine(4));
+        type("X");
+        assertEquals(4, fx(view::caretLine));
+        assertEquals("alpha\n\nbeta\n\nXgamma\n", fx(() -> prosemirrorfx.markdown.Lossless.write(m.state().getDoc())));
+        assertEquals(fx(() -> view.sourceMap().text()), fx(() -> prosemirrorfx.markdown.Lossless.write(m.state().getDoc())), "the map describes the edited text, not the loaded one");
+    }
+
     // ---- code
 
     static final String FENCED = "intro\n\n```java\nint x;\n  y();\n```\n\nafter\n";
@@ -623,7 +667,7 @@ class ViewKeysTest {
         fx(menu::hide);
     }
 
-    @Test void lineNumbersButtonNumbersEveryBlockOnceEvenWhenItWraps() {
+    @Test void lineNumbersButtonNumbersEverySourceLineOnceEvenWhenABlockWraps() {
         var longText = "word ".repeat(80);
         open(h(1, "Title"), p(longText), ul(li(p("bullet"))), p("end|"));
         clickTool(EditorAction.LINES);
@@ -632,7 +676,7 @@ class ViewKeysTest {
         assertTrue(drawn > 4, "the long paragraph wraps");
         assertEquals(4, numbers.size(), "a wrapped paragraph is one line");
         assertEquals("1", numbers.getFirst().getText());
-        assertEquals("4", numbers.getLast().getText());
+        assertEquals("7", numbers.getLast().getText(), "the numbers are source lines: a blank line sits between top-level blocks");
         // the long paragraph's number is on its first drawn line, not in its middle
         var second = fx(() -> flows().get(1).localToScene(flows().get(1).getLayoutBounds()));
         var y2 = fx(() -> numbers.get(1).localToScene(0, numbers.get(1).getY()).getY());
