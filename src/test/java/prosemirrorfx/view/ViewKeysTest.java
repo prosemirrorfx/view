@@ -56,6 +56,22 @@ class ViewKeysTest {
 
     javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
 
+    @Test void cutCopyAndPasteCanBeCalledFromAHostToolbar() {
+        open(p("one [two] three"));
+        assertTrue(fx(view::copy));
+        assertEquals("two", fx(() -> Clipboard.getSystemClipboard().getString()));
+        assertTrue(fx(view::cut));
+        expect("p(\"one | three\")");
+        assertTrue(fx(view::paste));
+        expect("p(\"one two| three\")");
+        putHtml("bold word", "<b>bold</b> word");
+        assertTrue(fx(view::pastePlain));
+        expect("p(\"one twobold word| three\")");
+        fx(() -> view.model().select(prosemirrorfx.core.pm.Pm.cursor(m.state().getDoc(), 3)));
+        assertFalse(fx(view::copy), "nothing selected, nothing copied");
+        assertFalse(fx(view::cut));
+    }
+
     @Test void theLightColoursApplyUntilAThemeIsSet() {
         open(p("light|"));
         assertEquals(Theme.LIGHT.color("bg"), fx(this::pageColour));

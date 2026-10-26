@@ -29,7 +29,7 @@ It brings `prosemirrorfx-core` and `prosemirrorfx-markdown` with it.
     editor.markSaved();                                // after writing it: this text is the clean one
     editor.focus();
 
-`caret()` and `setCaret(int)` let the host remember where the caret was. `view()` returns the underlying `DocView` for what the class does not wrap (find, zoom, line numbers, a table of contents, `Toc`). Everything is for the JavaFX thread. Keys are the editor's own (Ctrl+B, Ctrl+I, Tab and Shift+Tab on list items, Ctrl+Z, Ctrl+F, ...); it binds no function keys, so those stay free for the host.
+`caret()` and `setCaret(int)` let the host remember where the caret was. `copy()`, `cut()`, `paste()` and `pastePlain()` do what Ctrl+C, X, V and Shift+V do, for a host toolbar or menu, and each returns whether it did anything (`DocView` has the same four). `view()` returns the underlying `DocView` for what the class does not wrap (find, zoom, line numbers, a table of contents, `Toc`). Everything is for the JavaFX thread. Keys are the editor's own (Ctrl+B, Ctrl+I, Tab and Shift+Tab on list items, Ctrl+Z, Ctrl+F, ...); it binds no function keys, so those stay free for the host.
 
 Undoing back to the loaded text makes `isDirty()` false again. The byte-for-byte guarantee comes from `Lossless` in `prosemirrorfx-markdown`.
 

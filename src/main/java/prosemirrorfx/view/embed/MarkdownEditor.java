@@ -80,6 +80,15 @@ public final class MarkdownEditor {
 
     public void focus() { view.requestFocus(); }
 
+    /** Clipboard actions for a host's own toolbar or menu: what Ctrl+C, X, V and Shift+V do. Each says whether it did anything. */
+    public boolean copy() { return view.copy(); }
+
+    public boolean cut() { return view.cut(); }
+
+    public boolean paste() { return view.paste(); }
+
+    public boolean pastePlain() { return view.pastePlain(); }
+
     /** The caret as a position in the document, for a host that remembers it; see setCaret. */
     public int caret() { return view.model().state().getSelection().getHead(); }
 

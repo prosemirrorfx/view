@@ -63,6 +63,15 @@ class MarkdownEditorTest {
         assertEquals("first\n\n>> a commentX\n\n- item\n", out);
     }
 
+    @Test void clipboardActionsWorkOnTheEmbeddingClassToo() {
+        var ed = shown("a\n");
+        fx(() -> { var c = new ClipboardContent(); c.putString("pasted"); Clipboard.getSystemClipboard().setContent(c); });
+        assertTrue(fx(ed::pastePlain));
+        assertTrue(fx(ed::isDirty));
+        assertTrue(fx(ed::getMarkdown).contains("pasted"));
+        assertFalse(fx(ed::cut), "nothing is selected");
+    }
+
     @Test void listenerHearsEditsButNotLoads() {
         var calls = new AtomicInteger();
         var ed = shown("a\n");

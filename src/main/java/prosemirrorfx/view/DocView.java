@@ -1,6 +1,7 @@
 package prosemirrorfx.view;
 
 import com.atlassian.prosemirror.model.Node;
+import com.atlassian.prosemirror.state.Transaction;
 import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.control.ScrollPane;
@@ -179,6 +180,24 @@ public final class DocView extends StackPane {
         javafx.beans.value.ChangeListener<Theme> l = (o, was, t) -> part.setStyle(t.style());
         part.getProperties().put("pm-theme-listener", l);
         theme.addListener(new javafx.beans.value.WeakChangeListener<>(l));
+    }
+
+    /** Copy the selection to the system clipboard, as plain text and HTML. False when nothing is selected. JavaFX thread. */
+    public boolean copy() { return Clip.copy(model.state()); }
+
+    /** Copy the selection, then delete it. False when nothing is selected. */
+    public boolean cut() { return apply(Clip.cut(model.state())); }
+
+    /** Paste the clipboard at the caret, keeping its formatting where it has any. False when the clipboard holds no text. */
+    public boolean paste() { return apply(Clip.paste(model.state())); }
+
+    /** Paste only the clipboard's plain text, whatever formatting came with it. */
+    public boolean pastePlain() { return apply(Clip.pastePlain(model.state())); }
+
+    boolean apply(Transaction tr) {
+        if (tr == null) return false;
+        model.dispatch(tr);
+        return true;
     }
 
     public void find() { findBar.open(); }
