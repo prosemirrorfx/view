@@ -52,6 +52,19 @@ A fenced block in a Markdown file is drawn in a shaded, bordered box, in a monos
 
 The line numbers the toolbar toggles are the Markdown file's own source line numbers, not a running count: a blank line between blocks takes a number, a paragraph written over several lines has a number on each, a line the text merely wraps onto has none, and a fold shows as a jump. `DocView` and `MarkdownEditor` also give the position map for a source view or a search jump: `caretLine()`, `goToLine(line)`, `goToSource(line, column)`, `caretSourceOffset()`, `setCaretSourceOffset(offset)` (offsets index `getMarkdown()`), and `sourceMap()` for the whole `SourceMap` of the markdown module.
 
+## Find and search
+
+The find bar (Ctrl+F) has three options beside the box: `Aa` match case (Alt+C), `ab` whole word (Alt+W) and `.*` regular expression (Alt+R). A word is letters of any script, digits, combining marks and `_`. In regex mode `^` and `$` match at each line of a block and the replacement may use `$1` and `${name}`; an unparseable pattern says "invalid" and finds nothing. A match never spans two blocks.
+
+For a host's own search panel, `DocView` and `MarkdownEditor` have:
+
+    var hits = view.findAll(query, new Find.Options(regex, matchCase, wholeWord));  // from, to, block, line text, column
+    view.selectHit(hits.getFirst());           // or selectRange(from, to): selects, scrolls, and opens folded text around it
+    var n = view.replaceAll(query, options, "$2 at $1");       // one undo step, returns the count
+    var why = view.findProblem(query, options);                // null, or why a regex does not parse
+
+The matching itself is in core (`Find.hits`, `Find.replacements`), so a document read from a file with `Lossless.read` can be searched without a view, for a search across files; `SourceMap.of(doc).line(hit.from())` gives the hit's source line.
+
 ## Colours
 
 `view.setTheme(Theme.DARK)` restyles the view and the toolbar, status bar and contents panel made from it; `Theme.LIGHT` is the default. A theme is a set of named colours: `bg`, `panel`, `text`, `muted`, `interim`, `code`, `link`, `line`, `border`, `active-line`, `hover`, `handle`, `select`, `select-focus`, and the four the view draws in code, `caret`, `selection`, `match` (find) and `number` (line numbers). Change one with `Theme.LIGHT.with("link", "#FF00AA")`, or build your own with `Theme.of("bg", "#101010", ...)` listing every name.
