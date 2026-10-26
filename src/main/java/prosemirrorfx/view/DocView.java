@@ -61,7 +61,6 @@ public final class DocView extends StackPane {
         this.model = model;
         getStyleClass().add("pm-view");
         blocks.getStyleClass().add("pm-doc");
-        interim.getStyleClass().addAll("pm-text", "pm-interim");
         overlay.setMouseTransparent(true);
         overlay.setManaged(false);
         gutter.setMouseTransparent(true);
@@ -245,7 +244,7 @@ public final class DocView extends StackPane {
 
     // ---- live text: speech recognition, a stream, a script
 
-    final javafx.scene.text.Text interim = new javafx.scene.text.Text();
+    javafx.scene.text.Text interim = interimNode("");
     String interimText = "";
 
     /**
@@ -284,6 +283,12 @@ public final class DocView extends StackPane {
         });
     }
 
+    static javafx.scene.text.Text interimNode(String text) {
+        var t = new javafx.scene.text.Text(text);
+        t.getStyleClass().addAll("pm-text", "pm-interim");
+        return t;
+    }
+
     /** Put the interim text at the end of the last line, where the next commit will land. */
     void placeInterim() {
         if (interim.getParent() instanceof Pane p) p.getChildren().remove(interim);
@@ -292,8 +297,11 @@ public final class DocView extends StackPane {
         var line = tb.node.getTextContent();
         var newBullet = prosemirrorfx.core.editor.Tail.lineEndsSentence(model.state().getDoc()) && !line.isBlank();
         var gap = line.isEmpty() || Character.isWhitespace(line.charAt(line.length() - 1)) ? "" : newBullet ? "  " : " ";
-        interim.setText(gap + interimText);
+        // A fresh node each time: a TextFlow keeps the layout of a child whose text is changed in place, so the
+        // grey words stayed at the first few of each sentence until it was made final.
+        interim = interimNode(gap + interimText);
         tb.flow.getChildren().add(interim);
+        tb.flow.requestLayout();
     }
 
     static void onFx(Runnable r) {
