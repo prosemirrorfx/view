@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.prosemirrorfx</groupId>
+    <artifactId>prosemirrorfx-view</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>prosemirrorfx view</name>
+    <description>A native JavaFX editor view for the prosemirrorfx document, plus an embedding class for Markdown notes. No WebView.</description>
+    <url>https://github.com/prosemirrorfx/view</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>prosemirrorfx</id>
+            <name>Ivan Velikanov</name>
+            <email>ivan.velikanov.dev@gmail.com</email>
+            <url>https://github.com/prosemirrorfx</url>
+        </developer>
+    </developers>
+    <scm>
+        <url>https://github.com/prosemirrorfx/view</url>
+        <connection>scm:git:https://github.com/prosemirrorfx/view.git</connection>
+        <developerConnection>scm:git:git@github.com:prosemirrorfx/view.git</developerConnection>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>25</maven.compiler.release>
+        <prosemirrorfx.version>0.1.0-SNAPSHOT</prosemirrorfx.version>
+        <prosemirror.version>1.1.21</prosemirror.version>
+        <javafx.version>26.0.2</javafx.version>
+        <junit.version>5.11.4</junit.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.prosemirrorfx</groupId>
+            <artifactId>prosemirrorfx-core</artifactId>
+            <version>${prosemirrorfx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.prosemirrorfx</groupId>
+            <artifactId>prosemirrorfx-markdown</artifactId>
+            <version>${prosemirrorfx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,10 @@
+prosemirrorfx-view
+Copyright 2026 the prosemirrorfx authors. Licensed under the Apache License, Version 2.0.
+
+Depends on prosemirrorfx-core and prosemirrorfx-markdown, which are built on prosemirror-kotlin by Atlassian
+(Apache License, Version 2.0), and on OpenJFX (GPL v2 with the Classpath Exception).
+
+The toolbar icons in src/main/resources are Material Design icons by Google, from the npm package
+@material-design-icons/svg 0.14.13, licensed under the Apache License, Version 2.0.
+
+prosemirrorfx is an independent project. It is not affiliated with, or endorsed by, ProseMirror or Atlassian.
