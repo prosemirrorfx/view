@@ -40,6 +40,10 @@ public final class DocView extends StackPane {
     final javafx.beans.property.StringProperty fileStatus = new javafx.beans.property.SimpleStringProperty("");
     boolean dirty = true, reveal;
     long changedAt, renderedAt;
+    /** How often a scene asked this view to paint; with the view in one scene that is once per pulse. */
+    int layoutPasses;
+    /** The one listener a scene holds for this view: kept so it can be taken out when the view moves to another scene. */
+    final Runnable paint = this::afterLayout;
     static final boolean TRACE = System.getenv("PM_TRACE") != null;
 
     public DocView(EditorModel model) {
@@ -81,7 +85,10 @@ public final class DocView extends StackPane {
         });
         focusedProperty().addListener((o, a, b) -> invalidate());
         page.widthProperty().addListener((o, a, b) -> invalidate());
-        sceneProperty().addListener((o, a, scene) -> { if (scene != null) scene.addPostLayoutPulseListener(this::afterLayout); });
+        sceneProperty().addListener((o, was, scene) -> {
+            if (was != null) was.removePostLayoutPulseListener(paint);
+            if (scene != null) { scene.addPostLayoutPulseListener(paint); invalidate(); }
+        });
     }
 
     public EditorModel model() { return model; }
@@ -219,6 +226,7 @@ public final class DocView extends StackPane {
     }
 
     void afterLayout() {
+        layoutPasses++;
         if (!dirty || getScene() == null) return;
         dirty = false;
         caretLayer.paint(model.state().getSelection(), positions, isFocused());

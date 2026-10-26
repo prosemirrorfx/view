@@ -50,6 +50,23 @@ class ViewKeysTest {
         pulse();
     }
 
+    @Test void movingToAnotherWindowLeavesNothingBehindInTheOldScene() {
+        open(p("moved|"));
+        var second = fx(() -> new Stage());
+        fx(() -> {
+            root.setCenter(null);
+            second.setScene(new Scene(new BorderPane(view), 400, 300));
+            second.show();
+            view.requestFocus();
+        });
+        pulse();
+        var before = fx(() -> view.layoutPasses);
+        pulse();
+        var passes = fx(() -> view.layoutPasses) - before;
+        fx(second::hide);
+        assertEquals(1, passes, "one pulse paints the view once, not once per scene it has been in");
+    }
+
     @Test void backspaceAndDeleteInsideALine() {
         open(p("hello|"));
         press(BACK_SPACE);
