@@ -37,9 +37,14 @@ class ViewKeysTest {
         fx(() -> stage = new Stage());
     }
 
-    void open(Node... blocks) {
+    void open(Node... blocks) { showWith(() -> model(blocks)); }
+
+    /** A document read from Markdown text, the way a file is loaded, with the caret at its end. */
+    void openMarkdown(String md) { showWith(() -> new EditorModel(prosemirrorfx.markdown.Lossless.read(md))); }
+
+    void showWith(java.util.function.Supplier<EditorModel> make) {
         fx(() -> {
-            m = model(blocks);
+            m = make.get();
             view = new DocView(m);
             toc = new Toc(view);
             root = new BorderPane(view, Toolbar.of(view), null, StatusBar.of(view), toc);
@@ -55,6 +60,86 @@ class ViewKeysTest {
     javafx.scene.paint.Paint textColour() { return ((Text) flows().getFirst().getChildren().getFirst()).getFill(); }
 
     javafx.scene.paint.Paint labelColour(String selector) { return ((javafx.scene.control.Label) root.lookup(selector)).getTextFill(); }
+
+    // ---- code
+
+    static final String FENCED = "intro\n\n```java\nint x;\n  y();\n```\n\nafter\n";
+
+    List<javafx.scene.Node> visibleOf(String selector) {
+        return fx(() -> view.lookupAll(selector).stream().filter(javafx.scene.Node::isVisible).toList());
+    }
+
+    double fenceSize() {
+        return fx(() -> ((Text) view.lookupAll(".pm-fence").stream().filter(n -> n instanceof Text).findFirst().orElseThrow()).getFont().getSize());
+    }
+
+    @Test void aFencedBlockIsDrawnInABoxWithItsLanguageAndShrunkFences() {
+        openMarkdown(FENCED);
+        assertEquals(1, visibleOf(".pm-code-box").size());
+        assertEquals("java", fx(() -> ((javafx.scene.control.Label) visibleOf(".pm-code-language").getFirst()).getText()));
+        assertTrue(fenceSize() <= 2, "the fence lines are a hairline while the caret is outside: " + fenceSize());
+        var text = fx(() -> view.lookupAll(".pm-code-block .pm-text").stream().filter(n -> !n.getStyleClass().contains("pm-fence")).map(n -> ((Text) n).getText()).toList());
+        assertTrue(text.contains("int x;"), text.toString());
+    }
+
+    @Test void theFenceLinesComeBackWhileTheCaretIsInsideTheBlock() {
+        openMarkdown(FENCED);
+        fx(() -> m.select(prosemirrorfx.core.pm.Pm.cursor(m.state().getDoc(), Fixtures.posAfter(m.state().getDoc(), "int x;"))));
+        pulse();
+        pulse();
+        assertTrue(fenceSize() > 8, "the fence lines show while editing the block: " + fenceSize());
+        fx(() -> m.select(prosemirrorfx.core.pm.Pm.cursor(m.state().getDoc(), Fixtures.posAfter(m.state().getDoc(), "after"))));
+        pulse();
+        pulse();
+        assertTrue(fenceSize() <= 2, "and shrink again once the caret leaves");
+    }
+
+    @Test void theFenceLinesNeverDrawOverTheFirstLineOfCode() {
+        openMarkdown(FENCED);
+        fx(() -> m.select(prosemirrorfx.core.pm.Pm.cursor(m.state().getDoc(), Fixtures.posAfter(m.state().getDoc(), "int x;"))));
+        pulse();
+        pulse();
+        var overlap = fx(() -> {
+            var texts = view.lookupAll(".pm-code-block .pm-text").stream().map(n -> (Text) n).toList();
+            var fence = texts.stream().filter(t -> t.getStyleClass().contains("pm-fence")).findFirst().orElseThrow();
+            var code = texts.stream().filter(t -> !t.getStyleClass().contains("pm-fence") && t.getText().equals("int x;")).findFirst().orElseThrow();
+            return fence.localToScene(fence.getBoundsInLocal()).getMaxY() - code.localToScene(code.getBoundsInLocal()).getMinY();
+        });
+        assertTrue(overlap <= 1, "the opening fence line ends where the first code line begins, overlap " + overlap);
+    }
+
+    @Test void theCopyButtonCopiesTheCodeAndNotTheFences() {
+        openMarkdown(FENCED);
+        var copy = (javafx.scene.control.Label) visibleOf(".pm-code-copy").getFirst();
+        var click = new MouseEvent(MouseEvent.MOUSE_CLICKED, 1, 1, 1, 1, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, false, false, false, null);
+        fx(() -> Event.fireEvent(copy, click));
+        assertEquals("int x;\n  y();", fx(() -> Clipboard.getSystemClipboard().getString()));
+        assertEquals("copied", fx(copy::getText));
+        assertEquals(FENCED, fx(() -> prosemirrorfx.markdown.Lossless.write(m.state().getDoc())), "copying does not touch the text");
+    }
+
+    @Test void inlineCodeGetsABoxAndACopyButtonOnHover() {
+        openMarkdown("use `foo()` here\n");
+        var boxes = visibleOf(".pm-code-inline");
+        assertEquals(1, boxes.size());
+        var at = fx(() -> boxes.getFirst().localToScene(boxes.getFirst().getLayoutBounds()));
+        var hover = (javafx.scene.control.Label) fx(() -> view.lookup(".pm-code-inline-copy"));
+        assertFalse(fx(hover::isVisible), "no copy button until the pointer is on the code");
+        var move = new MouseEvent(MouseEvent.MOUSE_MOVED, at.getCenterX(), at.getCenterY(), 0, 0, MouseButton.NONE, 0, false, false, false, false, false, false, false, false, false, false, null);
+        fx(() -> Event.fireEvent(view.page, move));
+        assertTrue(fx(hover::isVisible));
+        var click = new MouseEvent(MouseEvent.MOUSE_CLICKED, 1, 1, 1, 1, MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, false, false, false, null);
+        fx(() -> Event.fireEvent(hover, click));
+        assertEquals("foo()", fx(() -> Clipboard.getSystemClipboard().getString()));
+    }
+
+    @Test void aThemeRestylesTheCodeBoxes() {
+        openMarkdown(FENCED);
+        fx(() -> view.setTheme(Theme.DARK));
+        pulse();
+        var fill = fx(() -> ((javafx.scene.layout.Region) visibleOf(".pm-code-box").getFirst()).getBackground().getFills().getFirst().getFill());
+        assertEquals(Theme.DARK.color("code-bg"), fill);
+    }
 
     // ---- folding
 

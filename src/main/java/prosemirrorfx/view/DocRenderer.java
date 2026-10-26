@@ -37,6 +37,7 @@ final class DocRenderer {
     static BlockView textblock(Node node, int start, boolean topLevel) {
         var flow = new TextFlow();
         flow.getStyleClass().add(styleClass(node));
+        if (Code.isBlock(node)) flow.getStyleClass().add("pm-code-block");
         var lead = topLevel ? str(node, "lead") : null;
         if (lead != null && !lead.isEmpty()) flow.setStyle("-fx-padding: 0 0 0 " + lead.chars().map(c -> c == 9 ? 4 : 1).sum() * 0.5 + "em;");
         flow.getChildren().setAll(runs(node));
@@ -47,9 +48,18 @@ final class DocRenderer {
         return textblock.getType() == HEADING ? "pm-h" + intAttr(textblock, "level") : "pm-p";
     }
 
-    static List<Text> runs(Node textblock) {
+    static List<Text> runs(Node textblock) { return runs(textblock, false); }
+
+    /** open: the caret is inside a fenced block, so its fence lines are shown at full size. */
+    static List<Text> runs(Node textblock, boolean open) {
         var texts = new ArrayList<Text>();
-        for (var inline : textblock.getContent().getContent()) texts.add(text(inline));
+        var kids = textblock.getContent().getContent();
+        var fence = Code.isBlock(textblock) ? Code.fenceChildren(textblock) : new BitSet();
+        for (var k = 0; k < kids.size(); k++) {
+            var t = text(kids.get(k));
+            if (fence.get(k)) t.getStyleClass().addAll(open ? List.of("pm-fence", "pm-fence-open") : List.of("pm-fence"));
+            texts.add(t);
+        }
         if (texts.isEmpty()) texts.add(text("", List.of()));
         return texts;
     }

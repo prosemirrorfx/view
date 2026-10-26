@@ -31,6 +31,7 @@ public final class DocView extends StackPane {
     final ActiveBlock active = new ActiveBlock(this, back, front);
     final Folds folds = new Folds();
     final FoldControls foldControls = new FoldControls(this, front);
+    final CodeBoxes codeBoxes = new CodeBoxes(this, back, front);
     final ReadOnlyObjectWrapper<Set<String>> foldedKeys = new ReadOnlyObjectWrapper<>(Set.of());
     boolean numbered;
     /** Set by the TOC when it is used: the next reveal puts the caret line near the top. */
@@ -83,6 +84,7 @@ public final class DocView extends StackPane {
             e.consume();
         });
         render(model.state().getDoc());
+        codeBoxes.sync(positions, model.state().getSelection());
         model.onChange((old, now) -> {
             changedAt = System.nanoTime();
             if (old.getDoc() != now.getDoc()) {
@@ -91,6 +93,7 @@ public final class DocView extends StackPane {
             }
             renderedAt = System.nanoTime();
             if (folds.openAround(now.getDoc(), now.getSelection().getHead())) refreshFolds(); else publishFolded();
+            codeBoxes.sync(positions, now.getSelection());
             reveal = true;
             invalidate();
         });
@@ -289,6 +292,7 @@ public final class DocView extends StackPane {
         if (numbered) lineNumbers.paint(positions);
         active.paint(positions);
         foldControls.paint(views, folds);
+        codeBoxes.paint(positions, model.state().getSelection());
         if (TRACE && changedAt > 0) System.err.printf("pm-trace render=%.2fms change-to-caret=%.2fms%n", (renderedAt - changedAt) / 1e6, (System.nanoTime() - changedAt) / 1e6);
         changedAt = 0;
         if (reveal) revealCaret();
@@ -309,6 +313,7 @@ public final class DocView extends StackPane {
         folds.layout(model.state().getDoc());
         folds.mark(views);
         positions = new Positions(views);
+        codeBoxes.sync(positions, model.state().getSelection());
         placeInterim();
         publishFolded();
         invalidate();

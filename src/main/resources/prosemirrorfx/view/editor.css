@@ -4,6 +4,7 @@
     -pm-bg: #FFFFFF; -pm-panel: #FAFBFC; -pm-text: #172B4D; -pm-muted: #5E6C84; -pm-interim: #8993A4;
     -pm-code: #403294; -pm-link: #0052CC; -pm-line: #DFE1E6; -pm-border: #C1C7D0; -pm-active-line: #F1F4F9;
     -pm-hover: #EBECF0; -pm-handle: #6B778C; -pm-select: #DEEBFF; -pm-select-focus: #4C9AFF;
+    -pm-code-bg: #F4F5F7; -pm-code-border: #DFE1E6;
 }
 
 .pm-scroll, .pm-scroll > .viewport { -fx-background-color: -pm-bg; }
@@ -75,3 +76,18 @@
 /* The fold control beside a block that has something to fold. */
 .pm-fold { -fx-font-family: "Segoe UI"; -fx-font-size: 0.95em; -fx-text-fill: -pm-handle; -fx-padding: 0 2; -fx-cursor: hand; }
 .pm-fold:hover { -fx-text-fill: -pm-text; }
+
+/* Code. A fenced block is one verbatim paragraph: its fence lines shrink to a hairline until the caret is inside, and a
+   box is drawn behind it with the language and a Copy button on top. Inline code gets a subtle box of its own. */
+.pm-code-block { -fx-padding: 26 12 10 12; }
+.pm-code-block .pm-text { -fx-font-family: "Consolas"; -fx-font-size: 0.95em; -fx-fill: -pm-text; }
+.pm-code-block .pm-fence { -fx-font-size: 1px; }
+.pm-code-block .pm-fence.pm-fence-open { -fx-font-size: 0.85em; -fx-fill: -pm-muted; }
+.pm-code-box { -fx-background-color: -pm-code-bg; -fx-border-color: -pm-code-border; -fx-border-radius: 6; -fx-background-radius: 6; }
+.pm-code-inline { -fx-background-color: -pm-code-bg; -fx-border-color: -pm-code-border; -fx-border-radius: 3; -fx-background-radius: 3; }
+.pm-code-tools { -fx-spacing: 10; -fx-alignment: center-right; }
+.pm-code-language, .pm-code-copy { -fx-font-family: "Segoe UI"; -fx-font-size: 11px; -fx-text-fill: -pm-muted; }
+.pm-code-copy { -fx-cursor: hand; -fx-padding: 1 6; -fx-border-color: -pm-code-border; -fx-border-radius: 3; -fx-background-color: -pm-bg; -fx-background-radius: 3; }
+.pm-code-copy:hover { -fx-text-fill: -pm-text; }
+.pm-code-inline-copy { -fx-font-family: "Segoe UI"; -fx-font-size: 10px; -fx-text-fill: -pm-muted; -fx-cursor: hand; -fx-padding: 0 4; -fx-border-color: -pm-code-border; -fx-border-radius: 3; -fx-background-color: -pm-bg; -fx-background-radius: 3; }
+.pm-code-inline-copy:hover { -fx-text-fill: -pm-text; }

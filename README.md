@@ -44,6 +44,10 @@ A list item with nested lines folds away everything after its first paragraph, a
 
 A key is the block's index path (child 6 of the document, its child 0, that one's child 1), so it names the same block when an unedited file is reopened. Edits made while the editor is open move the folds with their blocks. `MarkdownEditor` has the same five calls.
 
+## Code
+
+A fenced block in a Markdown file is drawn in a shaded, bordered box, in a monospace font, with its language (the word after the opening fence) in the top right corner and a Copy button beside it that copies the code without the fences. The fence lines stay in the text, so the file round-trips, but they shrink to a hairline until the caret is in the block. Inline code gets a subtle box of its own, and a small copy button appears over it when the pointer is on it. The boxes are styled by CSS from the theme colours `code-bg` and `code-border`, so `setTheme` restyles them. Only the lossless Markdown reader produces fenced blocks; text pasted from HTML and read by `Markdown` has none.
+
 ## Colours
 
 `view.setTheme(Theme.DARK)` restyles the view and the toolbar, status bar and contents panel made from it; `Theme.LIGHT` is the default. A theme is a set of named colours: `bg`, `panel`, `text`, `muted`, `interim`, `code`, `link`, `line`, `border`, `active-line`, `hover`, `handle`, `select`, `select-focus`, and the four the view draws in code, `caret`, `selection`, `match` (find) and `number` (line numbers). Change one with `Theme.LIGHT.with("link", "#FF00AA")`, or build your own with `Theme.of("bg", "#101010", ...)` listing every name.
