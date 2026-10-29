@@ -92,6 +92,7 @@ public final class DocView extends StackPane {
             changedAt = System.nanoTime();
             if (old.getDoc() != now.getDoc()) {
                 folds.remap(old.getDoc(), model.lastTransaction(), now.getDoc());
+                remapMarks(now.getDoc());
                 render(now.getDoc());
             }
             renderedAt = System.nanoTime();
@@ -108,6 +109,7 @@ public final class DocView extends StackPane {
             findBar.setStyle(style);
             caretLayer.apply(t);
             live.apply(t);
+            markLayer.apply(t);
             lineNumbers.apply(t);
             invalidate();
         });
@@ -365,6 +367,48 @@ public final class DocView extends StackPane {
         scroll.setVvalue(Math.max(0, Math.min(1, (b.getMinY() - viewH / 3) / range)));
     }
 
+    // ---- marks from a checker (spelling, grammar): wavy underlines that follow edits
+
+    /** A range [from, to) of document positions a checker flagged; kind is "spelling", "grammar" or "style"; data is the checker's own (its suggestions), carried along unchanged. */
+    public record Mark(int from, int to, String kind, Object data) {}
+
+    record Held(Mark mark, String text) {}
+
+    final MarkLayer markLayer = new MarkLayer(overlay);
+    List<Held> marks = List.of();
+
+    /** Underlines these ranges, replacing the previous set. An edit moves them; editing inside one removes it. Any thread. */
+    public void setMarks(List<Mark> list) {
+        var copy = List.copyOf(list);
+        onFx(() -> {
+            var doc = model.state().getDoc();
+            var size = doc.getContent().getSize();
+            marks = copy.stream().filter(m -> m.from() >= 0 && m.to() > m.from() && m.to() <= size)
+                    .map(m -> new Held(m, doc.textBetween(m.from(), m.to(), "\n", "\n"))).toList();
+            invalidate();
+        });
+    }
+
+    /** Where the caret was last drawn, in screen coordinates (to place a popup beside it), or null. FX thread. */
+    public javafx.geometry.Bounds caretOnScreen() {
+        var c = caretLayer.caretBounds;
+        return c == null ? null : overlay.localToScreen(c);
+    }
+
+    /** The marks as they stand now, moved through every edit since they were set. FX thread. */
+    public List<Mark> marks() { return marks.stream().map(Held::mark).toList(); }
+
+    void remapMarks(Node doc) {
+        if (marks.isEmpty()) return;
+        var map = model.lastTransaction().getMapping();
+        var size = doc.getContent().getSize();
+        marks = marks.stream().map(h -> {
+            var a = map.map(h.mark().from(), 1);
+            var b = Math.min(size, map.map(h.mark().to(), -1));
+            return b > a && doc.textBetween(a, b, "\n", "\n").equals(h.text()) ? new Held(new Mark(a, b, h.mark().kind(), h.mark().data()), h.text()) : null;
+        }).filter(Objects::nonNull).toList();
+    }
+
     static void onFx(Runnable r) {
         if (Platform.isFxApplicationThread()) r.run(); else Platform.runLater(r);
     }
@@ -391,6 +435,7 @@ public final class DocView extends StackPane {
         active.paint(positions);
         foldControls.paint(views, folds);
         codeBoxes.paint(positions, model.state().getSelection());
+        markLayer.paint(marks(), positions, live);
         live.paint(positions, caretLayer, page.getWidth());
         if (followReading) revealReading();
         if (TRACE && changedAt > 0) System.err.printf("pm-trace render=%.2fms change-to-caret=%.2fms%n", (renderedAt - changedAt) / 1e6, (System.nanoTime() - changedAt) / 1e6);
