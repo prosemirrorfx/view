@@ -26,6 +26,7 @@ final class DocRenderer {
         }
         var label = new Label(marker);
         label.getStyleClass().add("pm-marker");
+        if (marker != null && marker.matches("\\d+[.)]")) label.getStyleClass().add("pm-marker-number");
         box.getStyleClass().add("pm-item-body");
         HBox.setHgrow(box, Priority.ALWAYS);
         var row = new HBox(label, box);
@@ -39,7 +40,12 @@ final class DocRenderer {
         flow.getStyleClass().add(styleClass(node));
         if (Code.isBlock(node)) flow.getStyleClass().add("pm-code-block");
         var lead = topLevel ? str(node, "lead") : null;
-        if (lead != null && !lead.isEmpty()) flow.setStyle("-fx-padding: 0 0 0 " + lead.chars().map(c -> c == 9 ? 4 : 1).sum() * 0.5 + "em;");
+        var indent = lead == null ? 0 : lead.chars().map(c -> c == 9 ? 4 : 1).sum();
+        var comment = topLevel ? Comments.kind(node.getTextContent()) : null;
+        if (comment != null) {
+            flow.getStyleClass().addAll("pm-comment", comment);
+            VBox.setMargin(flow, new javafx.geometry.Insets(2, 0, 2, indent * 7.5));
+        } else if (indent > 0) flow.setStyle("-fx-padding: 0 0 0 " + indent * 0.5 + "em;");
         flow.getChildren().setAll(runs(node));
         return new BlockView(node, flow, null, flow, null, List.of(), start);
     }

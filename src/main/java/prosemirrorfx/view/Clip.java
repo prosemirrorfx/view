@@ -65,9 +65,16 @@ final class Clip {
         var text = cb.hasString() ? cb.getString().replace("\r\n", "\n").replace('\r', '\n') : "";
         var tr = state.getTr();
         if (lastSlice != null && !text.isEmpty() && text.equals(lastText)) return tr.replaceSelection(lastSlice).scrollIntoView();
+        // Another app's HTML can be anything: if it cannot be read, or holds no text, the plain text goes in instead,
+        // as Ctrl+Shift+V would (a failure here once left Ctrl+V doing nothing at all).
         if (cb.hasHtml()) {
-            var blocks = Html.read(cb.getHtml());
-            if (!blocks.isEmpty()) return tr.replaceSelection(Html.pasteSlice(blocks)).scrollIntoView();
+            try {
+                var blocks = Html.read(cb.getHtml());
+                if (blocks.stream().anyMatch(b -> !b.getTextContent().isBlank())) return tr.replaceSelection(Html.pasteSlice(blocks)).scrollIntoView();
+            } catch (RuntimeException e) {
+                System.err.println("prosemirrorfx: pasting the clipboard's HTML failed, pasting its text: " + e);
+                tr = state.getTr();
+            }
         }
         return pasteText(tr, text);
     }

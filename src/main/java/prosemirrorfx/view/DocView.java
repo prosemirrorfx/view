@@ -107,6 +107,7 @@ public final class DocView extends StackPane {
             scroll.setStyle(style);
             findBar.setStyle(style);
             caretLayer.apply(t);
+            live.apply(t);
             lineNumbers.apply(t);
             invalidate();
         });
@@ -304,6 +305,66 @@ public final class DocView extends StackPane {
         tb.flow.requestLayout();
     }
 
+
+    // ---- live text at the caret (dictation while editing) and the read-aloud highlight
+
+    final LiveLayer live = new LiveLayer(overlay);
+
+    /**
+     * Finished dictated text, inserted at the caret (replacing a selection) as one undo step, with a space before it
+     * when it would otherwise run into the previous word. Clears the caret interim text. Any thread.
+     */
+    public void insertCommitted(String text) {
+        onFx(() -> {
+            live.interimText = "";
+            if (text == null || text.isBlank()) { invalidate(); return; }
+            var state = model.state();
+            var sel = state.getSelection();
+            var before = sel.getFrom() > 0 ? state.getDoc().textBetween(Math.max(0, sel.getFrom() - 1), sel.getFrom(), "\n", "\n") : "";
+            var t = text.strip();
+            var glue = before.isEmpty() || Character.isWhitespace(before.charAt(0)) || ",.;:?!)".indexOf(t.charAt(0)) >= 0 ? "" : " ";
+            var size = state.getDoc().getContent().getSize();
+            var after = sel.getTo() < size ? state.getDoc().textBetween(sel.getTo(), Math.min(size, sel.getTo() + 1), "\n", "\n") : "";
+            var tail = after.isEmpty() || Character.isWhitespace(after.charAt(0)) || ",.;:?!)".indexOf(after.charAt(0)) >= 0 ? "" : " ";
+            var tr = state.getTr().insertText(glue + t + tail, sel.getFrom(), sel.getTo());
+            model.dispatch(com.atlassian.prosemirror.history.HistoryKt.closeHistory(tr));
+        });
+    }
+
+    /** Words still being dictated, grey at the caret; never part of the document. Empty or null clears. Any thread. */
+    public void setInterimAtCaret(String text) {
+        onFx(() -> {
+            live.interimText = text == null ? "" : text.strip();
+            invalidate();
+        });
+    }
+
+    /**
+     * The word being read aloud, as document positions [from, to): shaded, with a band across its line, and kept in
+     * view. Estimated timings draw the word softer. from &lt; 0 clears. Any thread.
+     */
+    public void setReading(int from, int to, boolean estimated) {
+        onFx(() -> {
+            live.from = from;
+            live.to = to;
+            live.estimated = estimated;
+            followReading = from >= 0;
+            invalidate();
+        });
+    }
+
+    boolean followReading;
+
+    void revealReading() {
+        var b = live.wordBounds;
+        var viewH = scroll.getViewportBounds().getHeight();
+        var range = page.getHeight() - viewH;
+        if (b == null || range <= 0) return;
+        var top = scroll.getVvalue() * range;
+        if (b.getMinY() >= top + 24 && b.getMaxY() <= top + viewH - 24) return;
+        scroll.setVvalue(Math.max(0, Math.min(1, (b.getMinY() - viewH / 3) / range)));
+    }
+
     static void onFx(Runnable r) {
         if (Platform.isFxApplicationThread()) r.run(); else Platform.runLater(r);
     }
@@ -330,6 +391,8 @@ public final class DocView extends StackPane {
         active.paint(positions);
         foldControls.paint(views, folds);
         codeBoxes.paint(positions, model.state().getSelection());
+        live.paint(positions, caretLayer, page.getWidth());
+        if (followReading) revealReading();
         if (TRACE && changedAt > 0) System.err.printf("pm-trace render=%.2fms change-to-caret=%.2fms%n", (renderedAt - changedAt) / 1e6, (System.nanoTime() - changedAt) / 1e6);
         changedAt = 0;
         if (reveal) revealCaret();

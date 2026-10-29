@@ -35,7 +35,7 @@ final class FindBar extends HBox {
         find.setPrefColumnCount(14);
         replace.setPrefColumnCount(12);
         count.setMinWidth(64);
-        getChildren().addAll(find, matchCase, word, regex, count, replace, button("Replace", this::replaceOne), button("All", this::replaceAll), button("✕", this::close));
+        getChildren().addAll(find, matchCase, word, regex, count, button("↑", () -> jump(false, false)), button("↓", () -> jump(true, false)), replace, button("Replace", this::replaceOne), button("All", this::replaceAll), button("✕", this::close));
         find.textProperty().addListener((o, a, b) -> { search(); jump(true, true); });
         for (var option : List.of(matchCase, word, regex)) option.selectedProperty().addListener((o, a, b) -> { search(); jump(true, true); });
         find.addEventHandler(KeyEvent.KEY_PRESSED, e -> {

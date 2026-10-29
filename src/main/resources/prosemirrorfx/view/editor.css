@@ -24,10 +24,16 @@
 .pm-h6 .pm-text { -fx-font-size: 0.8667em; -fx-font-weight: bold; -fx-fill: -pm-muted; }
 .pm-h1, .pm-h2, .pm-h3, .pm-h4, .pm-h5, .pm-h6 { -fx-padding: 6 0 0 0; }
 
-.pm-list { -fx-spacing: 4; }
+.pm-list { -fx-spacing: 7; }
 .pm-item { -fx-spacing: 6; }
 .pm-item-body { -fx-spacing: 4; }
 .pm-marker { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-text-fill: -pm-text; -fx-min-width: 22; -fx-alignment: top-right; }
+.pm-marker.pm-marker-number { -fx-font-weight: bold; }
+/* `>>` comment threads: a tinted bubble with a rule on the left; replies from the assistant in a second tint. */
+.pm-p.pm-comment { -fx-padding: 4 10 4 10; -fx-background-radius: 4; -fx-border-width: 0 0 0 3; -fx-border-radius: 2; }
+.pm-comment .pm-text { -fx-font-size: 0.95em; }
+.pm-p.pm-comment-user { -fx-background-color: rgba(245,166,35,0.12); -fx-border-color: rgba(245,166,35,0.85); }
+.pm-p.pm-comment-ai { -fx-background-color: rgba(76,154,255,0.10); -fx-border-color: rgba(76,154,255,0.75); }
 
 
 .pm-current .label { -fx-text-fill: -pm-link; }
@@ -49,6 +55,8 @@
 .pm-find .button { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-padding: 3 8; }
 .pm-status { -fx-font-family: "Segoe UI"; -fx-font-size: 12px; -fx-text-fill: -pm-muted; -fx-padding: 0 4 0 12; }
 .pm-text.pm-interim { -fx-fill: -pm-interim; -fx-font-style: italic; }
+.pm-interim-caret { -fx-font-family: "Segoe UI"; -fx-font-size: 1em; -fx-font-style: italic; -fx-text-fill: -pm-interim; -fx-background-color: -pm-bg; -fx-padding: 0 2; }
+.pm-interim-caret:floating { -fx-background-color: -pm-panel; -fx-border-color: -pm-border; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 1 6; }
 
 /* Toolbar on top and status line at the bottom: JavaFX's own buttons and colours, only sizes set here. */
 .pm-toolbar { -fx-padding: 4 8; -fx-spacing: 2; }
